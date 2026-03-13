@@ -249,7 +249,7 @@ const AdminDashboard = () => {
                     </div>
 
                     <img
-                      src={`http://localhost:5000${complaint.image_path}`}
+                      src={`http://localhost:5001${complaint.image_path}`}
                       alt="Complaint"
                       className="emergency-image"
                     />
@@ -372,7 +372,7 @@ const AdminDashboard = () => {
               <div className="detail-section">
                 <h3>📸 Original Complaint Image</h3>
                 <img
-                  src={`http://localhost:5000${selectedComplaint.image_path}`}
+                  src={`http://localhost:5001${selectedComplaint.image_path}`}
                   alt="Complaint"
                   className="detail-image"
                 />
@@ -423,7 +423,7 @@ const AdminDashboard = () => {
                       <div className="resolution-image-container">
                         <h4>Before Work</h4>
                         <img
-                          src={`http://localhost:5000${selectedComplaint.before_image_path}`}
+                          src={`http://localhost:5001${selectedComplaint.before_image_path}`}
                           alt="Before resolution"
                           className="resolution-image"
                         />
@@ -433,7 +433,7 @@ const AdminDashboard = () => {
                       <div className="resolution-image-container">
                         <h4>After Work</h4>
                         <img
-                          src={`http://localhost:5000${selectedComplaint.after_image_path}`}
+                          src={`http://localhost:5001${selectedComplaint.after_image_path}`}
                           alt="After resolution"
                           className="resolution-image"
                         />

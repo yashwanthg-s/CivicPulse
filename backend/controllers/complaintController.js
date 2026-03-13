@@ -126,7 +126,7 @@ class ComplaintController {
       let aiCategory = category || 'other';
       let aiPriority = priority || 'medium';
 
-      // Send to OpenAI API for image analysis
+      // Send to OpenAI API for image analysis (primary) with Gemini fallback
       try {
         const openaiVisionService = require('../services/openaiVisionService');
         const fs = require('fs');
@@ -135,40 +135,61 @@ class ComplaintController {
         const imageBuffer = fs.readFileSync(req.file.path);
         const base64Image = imageBuffer.toString('base64');
         
-        // Analyze with OpenAI
-        const openaiResponse = await openaiVisionService.analyzeComplaintImage(
-          base64Image,
-          title,
-          description
-        );
+        // Try OpenAI first
+        let aiResponse = null;
+        try {
+          console.log('Analyzing complaint image with OpenAI Vision API...');
+          aiResponse = await openaiVisionService.analyzeComplaintImage(
+            base64Image,
+            title,
+            description
+          );
+          console.log('✓ OpenAI analysis successful');
+        } catch (openaiError) {
+          console.warn('OpenAI API failed, trying Gemini fallback:', openaiError.message);
+          // Fallback to Gemini if OpenAI fails
+          try {
+            const geminiVisionService = require('../services/geminiVisionService');
+            aiResponse = await geminiVisionService.analyzeComplaintImage(
+              base64Image,
+              title,
+              description
+            );
+            console.log('✓ Gemini fallback successful');
+          } catch (geminiError) {
+            console.warn('Both OpenAI and Gemini failed, using keyword fallback:', geminiError.message);
+            // Both failed, will use keyword fallback below
+          }
+        }
 
         // Check if image is blocked (contains human)
-        if (openaiResponse && openaiResponse.is_blocked) {
-          console.warn('Image blocked by OpenAI:', openaiResponse.block_reason);
+        if (aiResponse && aiResponse.is_blocked) {
+          console.warn('Image blocked by AI service:', aiResponse.block_reason);
           return res.status(400).json({
             success: false,
-            message: openaiResponse.block_reason || 'Image contains blocked content',
+            message: aiResponse.block_reason || 'Image contains blocked content',
             blocked: true
           });
         }
 
-        if (openaiResponse) {
+        if (aiResponse) {
           // User-selected category takes precedence
-          aiCategory = category || openaiResponse.category || 'other';
-          aiPriority = priority || openaiResponse.priority || 'medium';
+          aiCategory = category || aiResponse.category || 'other';
+          aiPriority = priority || aiResponse.priority || 'medium';
           complaintData.category = aiCategory;
           complaintData.priority = aiPriority;
-          console.log('OpenAI Analysis:', {
-            openai_category: openaiResponse.category,
+          console.log('AI Analysis:', {
+            ai_category: aiResponse.category,
             user_category: category,
             final_category: aiCategory,
-            openai_priority: openaiResponse.priority,
+            ai_priority: aiResponse.priority,
             user_priority: priority,
             final_priority: aiPriority,
-            confidence: openaiResponse.confidence,
-            is_blocked: openaiResponse.is_blocked
+            confidence: aiResponse.confidence,
+            is_blocked: aiResponse.is_blocked,
+            detection_method: aiResponse.detection_method
           });
-          console.log('Complaint data after OpenAI:', complaintData);
+          console.log('Complaint data after AI analysis:', complaintData);
         }
       } catch (aiError) {
         console.error('Image validation failed:', aiError.message);
@@ -277,19 +298,21 @@ class ComplaintController {
   static async getComplaints(req, res) {
     try {
       const filters = {
-        status: req.query.status,
         category: req.query.category,
-        priority: req.query.priority,
-        user_id: req.query.user_id || req.user?.id
+        priority: req.query.priority
       };
 
-      // For officer dashboard, show complaints by category (status = submitted)
+      // For officer dashboard, show all complaints by category
       const userRole = req.query.role || 'citizen';
       if (userRole === 'officer') {
-        // Officers see new complaints in their category (status = submitted)
-        // They can also filter by status to see under_review or resolved
-        if (!filters.status) {
-          filters.status = 'submitted';
+        // Officers see all complaints in their category
+        // Don't filter by status - show all
+      } else {
+        // Citizens see their own complaints
+        filters.user_id = req.query.user_id || req.user?.id;
+        // If status is specified, use it
+        if (req.query.status) {
+          filters.status = req.query.status;
         }
       }
 
@@ -302,10 +325,16 @@ class ComplaintController {
 
       const complaints = await Complaint.findAll(filters);
 
+      // For officer dashboard, group duplicate complaints
+      let displayComplaints = complaints;
+      if (userRole === 'officer') {
+        displayComplaints = await ComplaintController.groupDuplicateComplaints(complaints);
+      }
+
       res.json({
         success: true,
-        count: complaints.length,
-        complaints
+        count: displayComplaints.length,
+        complaints: displayComplaints
       });
     } catch (error) {
       console.error('Get complaints error:', error);
@@ -314,6 +343,26 @@ class ComplaintController {
         message: 'Failed to fetch complaints',
         error: error.message
       });
+    }
+  }
+
+  static async groupDuplicateComplaints(complaints) {
+    try {
+      // For now, just add default duplicate_count to all complaints
+      // This prevents errors while cluster feature is being debugged
+      complaints.forEach(complaint => {
+        complaint.duplicate_count = 1;
+        complaint.is_primary = true;
+      });
+      return complaints;
+    } catch (error) {
+      console.error('Error grouping duplicate complaints:', error);
+      // If grouping fails, return original complaints with default values
+      complaints.forEach(complaint => {
+        complaint.duplicate_count = 1;
+        complaint.is_primary = true;
+      });
+      return complaints;
     }
   }
 
@@ -579,6 +628,21 @@ class ComplaintController {
         resolution_notes || ''
       );
       console.log('✓ Resolution record created:', resolutionId);
+
+      // Create notification for citizen
+      console.log('🔔 Creating resolution notification for citizen...');
+      const pool = require('../config/database');
+      const connection = await pool.getConnection();
+      try {
+        const notificationMessage = `Your complaint "${complaint.title}" has been resolved by an officer.`;
+        await connection.execute(
+          'INSERT INTO complaint_updates (complaint_id, message) VALUES (?, ?)',
+          [id, notificationMessage]
+        );
+        console.log('✓ Resolution notification created');
+      } finally {
+        connection.release();
+      }
 
       console.log('✅ Complaint resolved successfully\n');
 

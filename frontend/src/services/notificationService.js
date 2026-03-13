@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 export const notificationService = {
   /**
@@ -67,6 +67,52 @@ export const notificationService = {
       return await response.json();
     } catch (error) {
       console.error('Mark all as read error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get resolution notifications for a citizen
+   */
+  async getResolutionNotifications(userId) {
+    try {
+      const response = await fetch(`${API_URL}/notifications/resolution?user_id=${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch resolution notifications');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Get resolution notifications error:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Mark a resolution notification as read
+   */
+  async markResolutionNotificationAsRead(notificationId) {
+    try {
+      const response = await fetch(`${API_URL}/notifications/resolution/${notificationId}/read`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to mark resolution notification as read');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Mark resolution notification as read error:', error);
       throw error;
     }
   },

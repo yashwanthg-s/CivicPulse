@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { complaintService } from '../services/complaintService';
 import { locationService } from '../services/locationService';
-import { OfficerNotificationBell } from './OfficerNotificationBell';
+import { CategoryNotificationBells } from './CategoryNotificationBells';
+import { CategoryHistory } from './CategoryHistory';
 import '../styles/OfficerDashboard.css';
 
 export const OfficerDashboard = ({ userId }) => {
@@ -9,7 +10,6 @@ export const OfficerDashboard = ({ userId }) => {
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    status: 'all',
     category: 'infrastructure'
   });
   const [updateMessage, setUpdateMessage] = useState('');
@@ -19,6 +19,7 @@ export const OfficerDashboard = ({ userId }) => {
   const [afterImage, setAfterImage] = useState(null);
   const [resolutionNotes, setResolutionNotes] = useState('');
   const [submittingResolution, setSubmittingResolution] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     fetchComplaints();
@@ -112,7 +113,7 @@ export const OfficerDashboard = ({ userId }) => {
         : await fileToBase64(afterImage);
 
       // Call resolve endpoint
-      const response = await fetch(`http://localhost:5000/api/complaints/${selectedComplaint.id}/resolve`, {
+      const response = await fetch(`http://localhost:5001/api/complaints/${selectedComplaint.id}/resolve`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -178,29 +179,10 @@ export const OfficerDashboard = ({ userId }) => {
     <div className="officer-dashboard-container">
       <div className="dashboard-header">
         <h1>👮 Officer Dashboard</h1>
-        <OfficerNotificationBell 
-          officerId={userId}
-          selectedCategory={filters.category}
-          onNotificationClick={handleNotificationClick}
-        />
       </div>
 
       {/* Filters */}
       <div className="filters-section">
-        <div className="filter-group">
-          <label htmlFor="status-filter">Status:</label>
-          <select
-            id="status-filter"
-            name="status"
-            value={filters.status}
-            onChange={handleFilterChange}
-          >
-            <option value="all">All Assigned</option>
-            <option value="under_review">Under Review</option>
-            <option value="resolved">Resolved</option>
-          </select>
-        </div>
-
         <div className="filter-group">
           <label htmlFor="category-filter">Category:</label>
           <select
@@ -216,11 +198,31 @@ export const OfficerDashboard = ({ userId }) => {
             <option value="utilities">Utilities</option>
           </select>
         </div>
+
+        <div className="filter-group filter-group-with-icon">
+          <div className="notification-bell-section">
+            <CategoryNotificationBells 
+              userId={userId}
+              selectedCategory={filters.category}
+              onNotificationClick={handleNotificationClick}
+            />
+          </div>
+          <button
+            onClick={() => setShowHistory(!showHistory)}
+            className={`btn ${showHistory ? 'btn-secondary' : 'btn-primary'}`}
+          >
+            {showHistory ? '📋 Active Complaints' : '📜 View History'}
+          </button>
+        </div>
       </div>
 
       <div className="dashboard-content">
-        {/* Complaints List */}
-        <div className="complaints-list">
+        {showHistory ? (
+          <CategoryHistory userId={userId} selectedCategory={filters.category} />
+        ) : (
+          <>
+            {/* Complaints List */}
+            <div className="complaints-list">
           <h2>Assigned Complaints ({complaints.length})</h2>
           {loading ? (
             <p>Loading complaints...</p>
@@ -240,6 +242,11 @@ export const OfficerDashboard = ({ userId }) => {
                       <span className={getStatusBadgeClass(complaint.status)}>
                         {complaint.status}
                       </span>
+                      {complaint.duplicate_count > 1 && (
+                        <span className="badge badge-duplicate" title={`${complaint.duplicate_count} similar complaints`}>
+                          🔄 {complaint.duplicate_count}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <p className="complaint-meta">
@@ -263,7 +270,7 @@ export const OfficerDashboard = ({ userId }) => {
             <div className="detail-section">
               <h3>📸 Captured Image</h3>
               <img
-                src={`http://localhost:5000${selectedComplaint.image_path}`}
+                src={`http://localhost:5001${selectedComplaint.image_path}`}
                 alt="Complaint evidence"
                 className="complaint-image"
               />
@@ -495,6 +502,8 @@ export const OfficerDashboard = ({ userId }) => {
               )}
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
     </div>

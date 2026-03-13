@@ -68,16 +68,8 @@ class Complaint {
       const params = [];
 
       if (filters.status) {
-        // Handle multiple statuses (comma-separated)
-        if (filters.status.includes(',')) {
-          const statuses = filters.status.split(',');
-          const placeholders = statuses.map(() => '?').join(',');
-          query += ` AND c.status IN (${placeholders})`;
-          params.push(...statuses);
-        } else {
-          query += ' AND c.status = ?';
-          params.push(filters.status);
-        }
+        query += ' AND c.status = ?';
+        params.push(filters.status);
       }
       if (filters.category) {
         query += ' AND c.category = ?';

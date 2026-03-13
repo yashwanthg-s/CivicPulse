@@ -68,7 +68,7 @@ export const ComplaintForm = ({ userId = 1 }) => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-        const response = await fetch('http://localhost:5000/api/complaints/validate-image', {
+        const response = await fetch('http://localhost:5001/api/complaints/validate-image', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -141,7 +141,7 @@ export const ComplaintForm = ({ userId = 1 }) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-      const response = await fetch('http://localhost:5000/api/complaints/validate-image', {
+      const response = await fetch('http://localhost:5001/api/complaints/validate-image', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

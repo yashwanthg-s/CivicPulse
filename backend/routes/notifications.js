@@ -20,9 +20,13 @@ router.get('/officer', verifyToken, NotificationController.getOfficerNotificatio
 router.patch('/officer/:id/read', verifyToken, NotificationController.markOfficerNotificationAsRead);
 router.post('/officer/mark-all-read', verifyToken, NotificationController.markAllOfficerNotificationsAsRead);
 
+// Resolution notification routes (for citizens when complaints are resolved) - MUST come before category routes
+router.get('/resolution', verifyToken, NotificationController.getResolutionNotifications);
+router.patch('/resolution/:id/read', verifyToken, NotificationController.markResolutionNotificationAsRead);
+
 // Category-based notification routes (new complaints in officer's categories)
-router.get('/officer/category/notifications', verifyToken, NotificationController.getCategoryBasedNotifications);
-router.patch('/officer/category/:complaintId/read', verifyToken, NotificationController.markCategoryNotificationAsRead);
-router.post('/officer/category/mark-all-read', verifyToken, NotificationController.markAllCategoryNotificationsAsRead);
+router.get('/category', verifyToken, NotificationController.getCategoryBasedNotifications);
+router.put('/category/:complaintId/read', verifyToken, NotificationController.markCategoryNotificationAsRead);
+router.put('/category/mark-all-read', verifyToken, NotificationController.markAllCategoryNotificationsAsRead);
 
 module.exports = router;

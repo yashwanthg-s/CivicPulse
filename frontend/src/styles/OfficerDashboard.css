@@ -21,6 +21,31 @@
   margin-bottom: 20px;
 }
 
+.filter-group-with-icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.notification-bell-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.notification-bell-section .category-notification-bells {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.filter-group-with-icon .btn {
+  width: 100%;
+  align-self: stretch;
+}
+
 .filters-section {
   display: flex;
   gap: 15px;
@@ -53,15 +78,58 @@
   font-size: 14px;
 }
 
+.filter-group .btn {
+  align-self: flex-end;
+  margin-top: auto;
+  padding: 10px 24px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filter-group .btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+.filter-group .btn-primary:hover {
+  background: linear-gradient(135deg, #5568d3 0%, #6a3f8f 100%);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px);
+}
+
+.filter-group .btn-secondary {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border: none;
+}
+
+.filter-group .btn-secondary:hover {
+  background: linear-gradient(135deg, #e67ee8 0%, #e84560 100%);
+  box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
+  transform: translateY(-2px);
+}
+
 .dashboard-content {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
 }
 
+.dashboard-content > .category-history-container {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 1024px) {
   .dashboard-content {
     grid-template-columns: 1fr;
+  }
+
+  .notification-bell-section {
+    padding: 12px 15px;
   }
 }
 
@@ -150,6 +218,14 @@
 .badge-rejected {
   background: #f8d7da;
   color: #842029;
+}
+
+.badge-duplicate {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffc107;
+  font-weight: 700;
+  padding: 4px 10px;
 }
 
 .badge-priority-low {

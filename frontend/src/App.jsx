@@ -6,6 +6,7 @@ import AdminDashboard from './components/AdminDashboard';
 import { Login } from './components/Login';
 import { Signup } from './components/Signup';
 import { CategoryNotificationBells } from './components/CategoryNotificationBells';
+import { CitizenNotificationBell } from './components/CitizenNotificationBell';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import './App.css';
 
@@ -109,11 +110,17 @@ function AppMain({ user, currentPage, setCurrentPage, handleLogout, handleNotifi
           <h1>🚨 {t('dashboard')}</h1>
           <div className="header-right">
             {user.role === 'citizen' && (
-              <CategoryNotificationBells 
-                userId={user.id} 
-                selectedCategory={null}
-                onNotificationClick={handleNotificationClick}
-              />
+              <>
+                <CitizenNotificationBell 
+                  userId={user.id} 
+                  onNotificationClick={handleNotificationClick}
+                />
+                <CategoryNotificationBells 
+                  userId={user.id} 
+                  selectedCategory={null}
+                  onNotificationClick={handleNotificationClick}
+                />
+              </>
             )}
             <div className="user-info">
               <span className="user-name">👤 {user.name || user.username}</span>
