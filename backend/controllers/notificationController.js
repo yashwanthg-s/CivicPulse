@@ -265,6 +265,7 @@ class NotificationController {
   static async getCategoryBasedNotifications(req, res) {
     try {
       const officerId = req.query.officer_id || req.user?.id;
+      const selectedCategory = req.query.category; // Get category from query params
       
       if (!officerId) {
         return res.status(400).json({
@@ -290,7 +291,12 @@ class NotificationController {
           });
         }
 
-        const categoryList = categories.map(c => c.category);
+        let categoryList = categories.map(c => c.category);
+        
+        // If a specific category is selected, filter to only that category
+        if (selectedCategory && categoryList.includes(selectedCategory)) {
+          categoryList = [selectedCategory];
+        }
 
         // Get new complaints in officer's categories that haven't been marked as read
         const query = `

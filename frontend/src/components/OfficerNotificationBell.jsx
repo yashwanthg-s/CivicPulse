@@ -3,7 +3,7 @@ import '../styles/NotificationBell.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-export const OfficerNotificationBell = ({ officerId, onNotificationClick }) => {
+export const OfficerNotificationBell = ({ officerId, selectedCategory, onNotificationClick }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -14,7 +14,7 @@ export const OfficerNotificationBell = ({ officerId, onNotificationClick }) => {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/notifications/officer/category/notifications?officer_id=${officerId}`, {
+      const response = await fetch(`${API_URL}/notifications/officer/category/notifications?officer_id=${officerId}&category=${selectedCategory}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -37,7 +37,7 @@ export const OfficerNotificationBell = ({ officerId, onNotificationClick }) => {
     }
   };
 
-  // Initial fetch and polling
+  // Initial fetch and polling - refetch when category changes
   useEffect(() => {
     fetchNotifications();
     
@@ -45,7 +45,7 @@ export const OfficerNotificationBell = ({ officerId, onNotificationClick }) => {
     const interval = setInterval(fetchNotifications, 30000);
     
     return () => clearInterval(interval);
-  }, [officerId]);
+  }, [officerId, selectedCategory]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

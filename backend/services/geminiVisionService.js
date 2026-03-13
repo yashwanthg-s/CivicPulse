@@ -154,39 +154,42 @@ class GeminiVisionService {
                   {
                     text: `You are analyzing an image for a civic complaint system.
 
-YOUR TASK: Detect if a HUMAN FACE is visible in the image.
+TASK 1: Detect if a HUMAN FACE is visible
+TASK 2: Categorize the civic issue
+TASK 3: Determine priority level
 
-INSTRUCTIONS:
-1. Look for human faces in the image
-2. If ANY human face is visible (even partially, even in background) → BLOCK
-3. If NO human face is visible → ACCEPT
+HUMAN FACE DETECTION:
+- Look for human faces (eyes, nose, mouth, facial features)
+- If ANY human face is visible → set human_face_detected: true
+- If NO human face → set human_face_detected: false
 
-DO NOT:
-- Compare RGB values or color patterns
-- Look for skin tones
-- Analyze clothing or body parts
-- Make assumptions based on colors
+CATEGORIZATION:
+Analyze the image and title/description to categorize into:
+- infrastructure: roads, bridges, streetlights, buildings, water systems
+- sanitation: garbage, waste, cleanliness, sewage
+- traffic: traffic signals, road markings, congestion, accidents
+- safety: hazards, dangerous conditions, security issues
+- utilities: electricity, water, gas, power lines
+- other: if unclear
 
-DO:
-- Detect actual human FACES (eyes, nose, mouth, facial features)
-- Look for face shapes and facial structures
-- Identify faces even if partially visible or in background
-- Block if ANY face is detected
+PRIORITY DETERMINATION:
+- critical: immediate danger, emergency, life-threatening
+- high: significant damage, affects many people, urgent
+- medium: moderate issue, affects some people
+- low: minor issue, cosmetic, can wait
 
-Examples:
-- Accident scene with person's face visible → BLOCK (face detected)
-- Pothole with no faces visible → ACCEPT (no face)
-- Garbage pile with person's face visible → BLOCK (face detected)
-- Road damage with no faces → ACCEPT (no face)
-- Selfie → BLOCK (face is main subject)
-- Landscape with no people → ACCEPT (no face)
+Title: "${title}"
+Description: "${description}"
 
 Respond ONLY with valid JSON (no markdown, no extra text):
 {
   "human_face_detected": true/false,
   "face_count": 0-10,
+  "category": "infrastructure|sanitation|traffic|safety|utilities|other",
+  "priority": "critical|high|medium|low",
   "confidence_score": 0-100,
-  "reason": "brief reason"
+  "detected_issue": "brief description of detected issue",
+  "reason": "brief reason for categorization"
 }`
                   },
                   {
@@ -231,16 +234,19 @@ Respond ONLY with valid JSON (no markdown, no extra text):
             };
           }
           
-          // No face detected - ACCEPT
+          // No face detected - ACCEPT and return category/priority
           console.log('✓ No human face detected, accepting image');
+          console.log('Detected category:', result.category);
+          console.log('Detected priority:', result.priority);
           console.log('Reason:', result.reason);
           return {
-            category: 'other',
-            priority: 'medium',
-            confidence: result.confidence_score,
+            category: result.category || 'other',
+            priority: result.priority || 'medium',
+            confidence: result.confidence_score || 50,
             is_blocked: false,
             detection_method: 'gemini_vision',
-            face_count: result.face_count
+            detected_issue: result.detected_issue,
+            face_count: result.face_count || 0
           };
         }
       } catch (geminiError) {

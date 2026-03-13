@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { CameraCapture } from './CameraCapture';
 import { LocationDisplay } from './LocationDisplay';
 import { complaintService } from '../services/complaintService';
+import { useLanguage } from '../context/LanguageContext';
 import '../styles/ComplaintForm.css';
 
 export const ComplaintForm = ({ userId = 1 }) => {
+  const { t } = useLanguage();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -130,10 +132,59 @@ export const ComplaintForm = ({ userId = 1 }) => {
     // Set photo immediately
     setCapturedPhoto(photoData);
     setImageValidationError('');
-    setValidating(false);
     
-    // Don't validate with Gemini - just accept the photo
-    // The backend will handle validation during submission
+    // Validate image with Gemini and auto-fill category/priority
+    setValidating(true);
+    try {
+      const base64Image = await convertImageToBase64(photoData.blob);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      const response = await fetch('http://localhost:5000/api/complaints/validate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          image: base64Image,
+          title: formData.title,
+          description: formData.description
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const result = await response.json();
+        
+        if (result.success && result.valid) {
+          // Store validation result
+          setValidationResult(result);
+          
+          // Auto-fill category and priority based on image analysis
+          if (result.category && result.category !== 'other') {
+            setFormData(prev => ({
+              ...prev,
+              category: result.category,
+              priority: result.priority || prev.priority
+            }));
+            console.log(`✓ Auto-detected: Category=${result.category}, Priority=${result.priority}`);
+          }
+          setImageValidationError('');
+        } else if (!result.valid) {
+          setImageValidationError(result.message || 'Invalid image. Please capture a photo showing the civic issue.');
+          setValidationResult(null);
+        }
+      }
+    } catch (error) {
+      console.warn('Image analysis error:', error.message);
+      // Allow submission even if analysis fails
+      setValidationResult(null);
+    } finally {
+      setValidating(false);
+    }
   };
 
   const handleLocationCapture = (locationData) => {
@@ -151,14 +202,12 @@ export const ComplaintForm = ({ userId = 1 }) => {
     const newErrors = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = 'Complaint title is required';
+      newErrors.title = t('complaintTitle') + ' ' + t('error');
     }
     if (!formData.description.trim()) {
-      newErrors.description = 'Complaint description is required';
+      newErrors.description = t('description') + ' ' + t('error');
     }
-    if (!formData.category) {
-      newErrors.category = 'Category is required';
-    }
+    // Category is auto-detected from image, no manual validation needed
     if (!capturedPhoto) {
       newErrors.photo = 'Live photo capture is required';
     }
@@ -251,7 +300,7 @@ export const ComplaintForm = ({ userId = 1 }) => {
 
   return (
     <div className="complaint-form-container">
-      <h1>📝 Submit a Complaint</h1>
+      <h1>📝 {t('submitComplaint')}</h1>
 
       {errors.general && (
         <div className="alert alert-error">
@@ -261,23 +310,23 @@ export const ComplaintForm = ({ userId = 1 }) => {
 
       {validating && (
         <div className="alert alert-info">
-          ⏳ Validating complaint image...
+          ⏳ {t('loading')}
         </div>
       )}
 
       {imageValidationError && (
         <div className="alert alert-error">
-          <strong>❌ Invalid Image:</strong>
+          <strong>❌ {t('error')}:</strong>
           <p>{imageValidationError}</p>
         </div>
       )}
 
       {validationResult && (
         <div className="alert alert-success">
-          <strong>✓ Image Validated:</strong>
+          <strong>✓ {t('success')}:</strong>
           <p>Detected Issue: <strong>{validationResult.detected_issue}</strong></p>
-          <p>Category: <strong>{validationResult.category}</strong></p>
-          <p>Confidence: <strong>{(validationResult.confidence * 100).toFixed(0)}%</strong></p>
+          <p>{t('category')}: <strong>{t(validationResult.category)}</strong></p>
+          <p>Confidence: <strong>{validationResult.confidence}%</strong></p>
         </div>
       )}
 
@@ -298,14 +347,14 @@ export const ComplaintForm = ({ userId = 1 }) => {
       <form onSubmit={handleSubmit} className="complaint-form">
         {/* Complaint Title */}
         <div className="form-group">
-          <label htmlFor="title">Complaint Title *</label>
+          <label htmlFor="title">{t('complaintTitle')} *</label>
           <input
             type="text"
             id="title"
             name="title"
             value={formData.title}
             onChange={handleInputChange}
-            placeholder="Brief title of your complaint"
+            placeholder={t('complaintTitle')}
             className={errors.title ? 'input-error' : ''}
           />
           {errors.title && <span className="error-text">{errors.title}</span>}
@@ -313,57 +362,40 @@ export const ComplaintForm = ({ userId = 1 }) => {
 
         {/* Complaint Description */}
         <div className="form-group">
-          <label htmlFor="description">Description *</label>
+          <label htmlFor="description">{t('description')} *</label>
           <textarea
             id="description"
             name="description"
             value={formData.description}
             onChange={handleInputChange}
-            placeholder="Detailed description of the complaint"
+            placeholder={t('description')}
             rows="5"
             className={errors.description ? 'input-error' : ''}
           />
           {errors.description && <span className="error-text">{errors.description}</span>}
         </div>
 
-        {/* Category */}
-        <div className="form-group">
-          <label htmlFor="category">Category *</label>
-          <select
-            id="category"
-            name="category"
-            value={formData.category}
-            onChange={handleInputChange}
-            className={errors.category ? 'input-error' : ''}
-          >
-            <option value="">-- Select Category --</option>
-            <option value="infrastructure">Infrastructure</option>
-            <option value="sanitation">Sanitation</option>
-            <option value="traffic">Traffic</option>
-            <option value="safety">Safety</option>
-            <option value="utilities">Utilities</option>
-            <option value="other">Other</option>
-          </select>
-          {errors.category && <span className="error-text">{errors.category}</span>}
-          {validationResult && <small>Auto-detected: {validationResult.category}</small>}
-        </div>
-
-        {/* Priority */}
-        <div className="form-group">
-          <label htmlFor="priority">Priority</label>
-          <select
-            id="priority"
-            name="priority"
-            value={formData.priority}
-            onChange={handleInputChange}
-          >
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-            <option value="critical">Critical</option>
-          </select>
-          {validationResult && <small>Auto-detected: {validationResult.priority}</small>}
-        </div>
+        {/* Auto-Detected Category & Priority Display */}
+        {validationResult && (
+          <div className="form-group auto-detected-info">
+            <h4>🔍 Auto-Detected Information</h4>
+            <div className="detection-grid">
+              <div className="detection-item">
+                <label>{t('category')}</label>
+                <p className="detection-value">{t(validationResult.category)}</p>
+              </div>
+              <div className="detection-item">
+                <label>{t('priority')}</label>
+                <p className="detection-value">{t(validationResult.priority)}</p>
+              </div>
+              <div className="detection-item">
+                <label>Confidence</label>
+                <p className="detection-value">{validationResult.confidence}%</p>
+              </div>
+            </div>
+            <p className="detection-issue"><strong>Detected Issue:</strong> {validationResult.detected_issue}</p>
+          </div>
+        )}
 
         {/* Live Camera Capture */}
         <div className="form-section">
@@ -403,7 +435,7 @@ export const ComplaintForm = ({ userId = 1 }) => {
           disabled={loading || validating}
           className="btn btn-primary btn-large btn-submit"
         >
-          {loading ? '⏳ Submitting...' : validating ? '⏳ Validating...' : '✓ Submit Complaint'}
+          {loading ? '⏳ ' + t('submitting') : validating ? '⏳ ' + t('loading') : '✓ ' + t('submitButton')}
         </button>
       </form>
     </div>

@@ -5,10 +5,11 @@ import CitizenHistory from './components/CitizenHistory';
 import AdminDashboard from './components/AdminDashboard';
 import { Login } from './components/Login';
 import { Signup } from './components/Signup';
-import { NotificationBell } from './components/NotificationBell';
+import { CategoryNotificationBells } from './components/CategoryNotificationBells';
+import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import './App.css';
 
-function App() {
+function AppContent() {
   const [currentPage, setCurrentPage] = useState('complaint'); // 'complaint', 'history', 'dashboard', or 'admin'
   const [authPage, setAuthPage] = useState('login'); // 'login' or 'signup'
   const [user, setUser] = useState(null); // null when not logged in
@@ -95,15 +96,22 @@ function App() {
     }
   }
 
+  return <AppMain user={user} currentPage={currentPage} setCurrentPage={setCurrentPage} handleLogout={handleLogout} handleNotificationClick={handleNotificationClick} selectedComplaintId={selectedComplaintId} setSelectedComplaintId={setSelectedComplaintId} />;
+}
+
+function AppMain({ user, currentPage, setCurrentPage, handleLogout, handleNotificationClick, selectedComplaintId, setSelectedComplaintId }) {
+  const { t } = useLanguage();
+
   return (
     <div className="app">
       <header className="app-header">
         <div className="header-content">
-          <h1>🚨 Geo-Tagged Complaint System</h1>
+          <h1>🚨 {t('dashboard')}</h1>
           <div className="header-right">
             {user.role === 'citizen' && (
-              <NotificationBell 
+              <CategoryNotificationBells 
                 userId={user.id} 
+                selectedCategory={null}
                 onNotificationClick={handleNotificationClick}
               />
             )}
@@ -118,13 +126,13 @@ function App() {
                     className={`nav-btn ${currentPage === 'complaint' ? 'active' : ''}`}
                     onClick={() => setCurrentPage('complaint')}
                   >
-                    📝 Submit Complaint
+                    📝 {t('submitComplaint')}
                   </button>
                   <button
                     className={`nav-btn ${currentPage === 'history' ? 'active' : ''}`}
                     onClick={() => setCurrentPage('history')}
                   >
-                    📋 My History
+                    📋 {t('myComplaints')}
                   </button>
                 </>
               )}
@@ -133,7 +141,7 @@ function App() {
                   className={`nav-btn ${currentPage === 'dashboard' ? 'active' : ''}`}
                   onClick={() => setCurrentPage('dashboard')}
                 >
-                  👮 Officer Dashboard
+                  👮 {t('dashboard')}
                 </button>
               )}
               {user.role === 'admin' && (
@@ -141,14 +149,14 @@ function App() {
                   className={`nav-btn ${currentPage === 'admin' ? 'active' : ''}`}
                   onClick={() => setCurrentPage('admin')}
                 >
-                  🔐 Admin Dashboard
+                  🔐 {t('dashboard')}
                 </button>
               )}
               <button
                 className="nav-btn logout-btn"
                 onClick={handleLogout}
               >
-                🚪 Logout
+                🚪 {t('logout')}
               </button>
             </nav>
           </div>
@@ -176,4 +184,10 @@ function App() {
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
+  );
+}

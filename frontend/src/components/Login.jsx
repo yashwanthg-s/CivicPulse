@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { useLanguage } from '../context/LanguageContext';
+import { languageService } from '../services/languageService';
 import '../styles/Login.css';
 
 export const Login = ({ onLogin, onSwitchToSignup }) => {
+  const { setLanguage, t } = useLanguage();
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -9,6 +12,8 @@ export const Login = ({ onLogin, onSwitchToSignup }) => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [tempLanguage, setTempLanguage] = useState('en');
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -30,13 +35,13 @@ export const Login = ({ onLogin, onSwitchToSignup }) => {
         if (formData.username === 'admin' && formData.password === 'admin') {
           onLogin({ role: 'admin', username: 'admin', id: 1 });
         } else {
-          setError('Invalid admin credentials');
+          setError(t('invalidCredentials'));
         }
       } else if (formData.role === 'officer') {
         if (formData.username === 'officer' && formData.password === 'officer') {
           onLogin({ role: 'officer', username: 'officer', id: 2 });
         } else {
-          setError('Invalid officer credentials');
+          setError(t('invalidCredentials'));
         }
       } else {
         // For citizens, check against database
@@ -54,22 +59,46 @@ export const Login = ({ onLogin, onSwitchToSignup }) => {
         const data = await response.json();
 
         if (response.ok && data.success) {
-          onLogin({ 
-            role: 'citizen', 
-            username: data.user.username, 
-            id: data.user.id,
-            name: data.user.name,
-            email: data.user.email
-          });
+          // Show language selection modal for citizens
+          setShowLanguageModal(true);
+          setTempLanguage('en');
         } else {
-          setError(data.message || 'Invalid credentials');
+          setError(data.message || t('invalidCredentials'));
         }
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('Login failed. Please try again.');
+      setError(t('invalidCredentials'));
     }
     setLoading(false);
+  };
+
+  const handleLanguageSelect = (lang) => {
+    setLanguage(lang);
+    setShowLanguageModal(false);
+    
+    // Get the login data from form
+    const response = fetch('http://localhost:5000/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        username: formData.username,
+        password: formData.password
+      })
+    }).then(res => res.json()).then(data => {
+      if (data.success) {
+        onLogin({ 
+          role: 'citizen', 
+          username: data.user.username, 
+          id: data.user.id,
+          name: data.user.name,
+          email: data.user.email,
+          language: lang
+        });
+      }
+    });
   };
 
   return (
@@ -77,7 +106,7 @@ export const Login = ({ onLogin, onSwitchToSignup }) => {
       <div className="login-card">
         <div className="login-header">
           <h1>🚨 Complaint System</h1>
-          <h2>Login</h2>
+          <h2>{t('login')}</h2>
         </div>
 
         {error && (
@@ -88,7 +117,7 @@ export const Login = ({ onLogin, onSwitchToSignup }) => {
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label htmlFor="role">Login As</label>
+            <label htmlFor="role">{t('login')} As</label>
             <select
               id="role"
               name="role"
@@ -103,27 +132,27 @@ export const Login = ({ onLogin, onSwitchToSignup }) => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="username">{t('username')}</label>
             <input
               type="text"
               id="username"
               name="username"
               value={formData.username}
               onChange={handleInputChange}
-              placeholder="Enter your username"
+              placeholder={t('username')}
               required
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">{t('password')}</label>
             <input
               type="password"
               id="password"
               name="password"
               value={formData.password}
               onChange={handleInputChange}
-              placeholder="Enter your password"
+              placeholder={t('password')}
               required
             />
           </div>
@@ -133,18 +162,18 @@ export const Login = ({ onLogin, onSwitchToSignup }) => {
             disabled={loading}
             className="btn btn-primary btn-large"
           >
-            {loading ? '⏳ Logging in...' : '✓ Login'}
+            {loading ? '⏳ ' + t('loading') : '✓ ' + t('loginButton')}
           </button>
         </form>
 
         {formData.role === 'citizen' && (
           <div className="login-footer">
-            <p>Don't have an account?</p>
+            <p>{t('noAccount')}</p>
             <button
               onClick={onSwitchToSignup}
               className="btn-link"
             >
-              Sign Up Here
+              {t('signup')}
             </button>
           </div>
         )}
@@ -158,6 +187,28 @@ export const Login = ({ onLogin, onSwitchToSignup }) => {
           </div>
         )}
       </div>
+
+      {/* Language Selection Modal */}
+      {showLanguageModal && (
+        <div className="modal-overlay">
+          <div className="language-modal">
+            <h2>{t('selectLanguage')}</h2>
+            <p>Please select your preferred language</p>
+            <div className="language-options">
+              {languageService.getAvailableLanguages().map(lang => (
+                <button
+                  key={lang.code}
+                  onClick={() => handleLanguageSelect(lang.code)}
+                  className={`language-btn ${tempLanguage === lang.code ? 'active' : ''}`}
+                >
+                  <span className="language-name">{lang.nativeName}</span>
+                  <span className="language-code">({lang.name})</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

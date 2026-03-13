@@ -126,49 +126,49 @@ class ComplaintController {
       let aiCategory = category || 'other';
       let aiPriority = priority || 'medium';
 
-      // Send to Gemini API for image analysis
+      // Send to OpenAI API for image analysis
       try {
-        const geminiVisionService = require('../services/geminiVisionService');
+        const openaiVisionService = require('../services/openaiVisionService');
         const fs = require('fs');
         
         // Read image file
         const imageBuffer = fs.readFileSync(req.file.path);
         const base64Image = imageBuffer.toString('base64');
         
-        // Analyze with Gemini
-        const geminiResponse = await geminiVisionService.analyzeComplaintImage(
+        // Analyze with OpenAI
+        const openaiResponse = await openaiVisionService.analyzeComplaintImage(
           base64Image,
           title,
           description
         );
 
         // Check if image is blocked (contains human)
-        if (geminiResponse && geminiResponse.is_blocked) {
-          console.warn('Image blocked by Gemini:', geminiResponse.block_reason);
+        if (openaiResponse && openaiResponse.is_blocked) {
+          console.warn('Image blocked by OpenAI:', openaiResponse.block_reason);
           return res.status(400).json({
             success: false,
-            message: geminiResponse.block_reason || 'Image contains blocked content',
+            message: openaiResponse.block_reason || 'Image contains blocked content',
             blocked: true
           });
         }
 
-        if (geminiResponse) {
+        if (openaiResponse) {
           // User-selected category takes precedence
-          aiCategory = category || geminiResponse.category || 'other';
-          aiPriority = priority || geminiResponse.priority || 'medium';
+          aiCategory = category || openaiResponse.category || 'other';
+          aiPriority = priority || openaiResponse.priority || 'medium';
           complaintData.category = aiCategory;
           complaintData.priority = aiPriority;
-          console.log('Gemini Analysis:', {
-            gemini_category: geminiResponse.category,
+          console.log('OpenAI Analysis:', {
+            openai_category: openaiResponse.category,
             user_category: category,
             final_category: aiCategory,
-            gemini_priority: geminiResponse.priority,
+            openai_priority: openaiResponse.priority,
             user_priority: priority,
             final_priority: aiPriority,
-            confidence: geminiResponse.confidence,
-            is_blocked: geminiResponse.is_blocked
+            confidence: openaiResponse.confidence,
+            is_blocked: openaiResponse.is_blocked
           });
-          console.log('Complaint data after Gemini:', complaintData);
+          console.log('Complaint data after OpenAI:', complaintData);
         }
       } catch (aiError) {
         console.error('Image validation failed:', aiError.message);
@@ -462,7 +462,7 @@ class ComplaintController {
 
   static async validateImage(req, res) {
     try {
-      const { image } = req.body;
+      const { image, title = '', description = '' } = req.body;
 
       if (!image) {
         return res.status(400).json({
@@ -477,13 +477,20 @@ class ComplaintController {
         base64Image = image.split(',')[1];
       }
 
-      // Use Gemini Vision API for validation
-      const geminiVisionService = require('../services/geminiVisionService');
-      const validationResult = await geminiVisionService.analyzeComplaintImage(
+      console.log('Image validation request:');
+      console.log('  Title:', title || '(empty)');
+      console.log('  Description:', description || '(empty)');
+      console.log('  Image size:', base64Image.length, 'bytes');
+
+      // Use OpenAI Vision API for validation and analysis
+      const openaiVisionService = require('../services/openaiVisionService');
+      const validationResult = await openaiVisionService.analyzeComplaintImage(
         base64Image,
-        'Image validation',
-        'Validating image for complaint submission'
+        title,
+        description
       );
+
+      console.log('Validation result:', validationResult);
 
       // Check if image is blocked
       if (validationResult && validationResult.is_blocked) {
@@ -495,14 +502,15 @@ class ComplaintController {
         });
       }
 
-      // Image is valid
+      // Image is valid - return detected category and priority
       return res.json({
         success: true,
         valid: true,
-        message: 'Image validation successful',
+        message: 'Image analysis successful',
         category: validationResult.category || 'other',
         priority: validationResult.priority || 'medium',
-        confidence: validationResult.confidence || 0.5
+        confidence: validationResult.confidence || 0.5,
+        detected_issue: validationResult.detected_issue || null
       });
 
     } catch (error) {

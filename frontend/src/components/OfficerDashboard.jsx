@@ -179,7 +179,8 @@ export const OfficerDashboard = ({ userId }) => {
       <div className="dashboard-header">
         <h1>👮 Officer Dashboard</h1>
         <OfficerNotificationBell 
-          officerId={userId} 
+          officerId={userId}
+          selectedCategory={filters.category}
           onNotificationClick={handleNotificationClick}
         />
       </div>
