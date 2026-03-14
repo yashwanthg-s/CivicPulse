@@ -76,7 +76,7 @@ export const Login = ({ onLogin, onSwitchToSignup }) => {
   const handleLanguageSelect = (lang) => {
     setLanguage(lang);
     setShowLanguageModal(false);
-    
+
     // Get the login data from form
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
     const response = fetch(`${apiUrl}/auth/login`, {
@@ -90,9 +90,9 @@ export const Login = ({ onLogin, onSwitchToSignup }) => {
       })
     }).then(res => res.json()).then(data => {
       if (data.success) {
-        onLogin({ 
-          role: 'citizen', 
-          username: data.user.username, 
+        onLogin({
+          role: 'citizen',
+          username: data.user.username,
           id: data.user.id,
           name: data.user.name,
           email: data.user.email,
@@ -106,7 +106,7 @@ export const Login = ({ onLogin, onSwitchToSignup }) => {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h1>🚨 Complaint System</h1>
+          <h1>🚨 CivicPulse</h1>
           <h2>{t('login')}</h2>
         </div>
 

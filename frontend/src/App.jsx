@@ -5,6 +5,7 @@ import CitizenHistory from './components/CitizenHistory';
 import AdminDashboard from './components/AdminDashboard';
 import { Login } from './components/Login';
 import { Signup } from './components/Signup';
+import { Landing } from './components/Landing';
 import { CategoryNotificationBells } from './components/CategoryNotificationBells';
 import { CitizenNotificationBell } from './components/CitizenNotificationBell';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
@@ -14,7 +15,7 @@ import './App.css';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = useState('complaint'); // 'complaint', 'history', 'dashboard', or 'admin'
-  const [authPage, setAuthPage] = useState('login'); // 'login' or 'signup'
+  const [authPage, setAuthPage] = useState('landing'); // 'landing', 'login' or 'signup'
   const [user, setUser] = useState(null); // null when not logged in
   const [selectedComplaintId, setSelectedComplaintId] = useState(null); // For notification navigation
 
@@ -22,12 +23,12 @@ function AppContent() {
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     const savedPage = localStorage.getItem('currentPage');
-    
+
     if (savedUser) {
       try {
         const userData = JSON.parse(savedUser);
         setUser(userData);
-        
+
         // Restore the page they were on, or default based on role
         if (savedPage) {
           setCurrentPage(savedPage);
@@ -59,7 +60,7 @@ function AppContent() {
   const handleLogin = (userData) => {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
-    
+
     // Set initial page based on role
     if (userData.role === 'admin') {
       setCurrentPage('admin');
@@ -92,7 +93,9 @@ function AppContent() {
 
   // If not logged in, show login/signup page
   if (!user) {
-    if (authPage === 'login') {
+    if (authPage === 'landing') {
+      return <Landing onGoToLogin={() => setAuthPage('login')} />;
+    } else if (authPage === 'login') {
       return <Login onLogin={handleLogin} onSwitchToSignup={() => setAuthPage('signup')} />;
     } else {
       return <Signup onSignup={handleSignup} onSwitchToLogin={() => setAuthPage('login')} />;
@@ -114,34 +117,34 @@ function AppMain({ user, currentPage, setCurrentPage, handleLogout, handleNotifi
           <div className="header-right">
             {user.role === 'citizen' && (
               <>
-                <CitizenNotificationBell 
-                  userId={user.id} 
+                <CitizenNotificationBell
+                  userId={user.id}
                   onNotificationClick={handleNotificationClick}
                 />
-                <CategoryNotificationBells 
-                  userId={user.id} 
+                <CategoryNotificationBells
+                  userId={user.id}
                   selectedCategory={null}
                   onNotificationClick={handleNotificationClick}
                 />
               </>
             )}
             <div className="theme-toggle">
-              <button 
-                className={theme === 'light' ? 'active' : ''} 
+              <button
+                className={theme === 'light' ? 'active' : ''}
                 onClick={() => toggleTheme('light')}
                 title="Light theme"
               >
                 ☀️
               </button>
-              <button 
-                className={theme === 'dark' ? 'active' : ''} 
+              <button
+                className={theme === 'dark' ? 'active' : ''}
                 onClick={() => toggleTheme('dark')}
                 title="Dark theme"
               >
                 🌙
               </button>
-              <button 
-                className={theme === 'system' ? 'active' : ''} 
+              <button
+                className={theme === 'system' ? 'active' : ''}
                 onClick={() => toggleTheme('system')}
                 title="System theme"
               >
@@ -199,8 +202,8 @@ function AppMain({ user, currentPage, setCurrentPage, handleLogout, handleNotifi
       <main className="app-main">
         {currentPage === 'complaint' && <ComplaintForm userId={user.id} />}
         {currentPage === 'history' && (
-          <CitizenHistory 
-            userId={user.id} 
+          <CitizenHistory
+            userId={user.id}
             selectedComplaintId={selectedComplaintId}
             onComplaintViewed={() => setSelectedComplaintId(null)}
           />
@@ -210,7 +213,7 @@ function AppMain({ user, currentPage, setCurrentPage, handleLogout, handleNotifi
       </main>
 
       <footer className="app-footer">
-        <p>© 2024 Geo-Tagged Complaint System. All rights reserved.</p>
+        <p>© 2026 CivicPulse. All rights reserved.</p>
         <p>Live camera capture • GPS location • Automatic timestamp</p>
       </footer>
     </div>

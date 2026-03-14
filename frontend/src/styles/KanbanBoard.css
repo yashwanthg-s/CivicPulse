@@ -1,355 +1,245 @@
 .kanban-board-container {
-  padding: 20px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 40px 24px;
+  background: transparent;
   min-height: 100vh;
+  animation: fadeInScale 0.6s ease-out;
 }
 
 .kanban-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 30px;
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 40px;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 24px 32px;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: var(--shadow-md);
+}
+
+[data-theme="dark"] .kanban-header {
+  background: rgba(15, 23, 42, 0.4);
+  border-color: rgba(255, 255, 255, 0.05);
 }
 
 .kanban-header h2 {
   margin: 0;
-  color: #333;
-  font-size: 28px;
+  color: var(--text-primary);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .btn-refresh {
-  padding: 10px 20px;
-  background: #007bff;
+  padding: 12px 24px;
+  background: var(--gradient-primary);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-size: 14px;
-  transition: all 0.3s ease;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-refresh:hover {
-  background: #0056b3;
-  transform: scale(1.05);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
 }
 
 .kanban-board {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(4, 1fr);
+  /* Reduced to 4 columns for cleaner look */
+  gap: 24px;
   overflow-x: auto;
-  padding-bottom: 20px;
+  padding-bottom: 32px;
 }
 
-@media (max-width: 1400px) {
-  .kanban-board {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 1000px) {
-  .kanban-board {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 600px) {
-  .kanban-board {
-    grid-template-columns: 1fr;
-  }
+/* Hide the 5th column if it exists in DOM by index */
+.kanban-board>div:nth-child(5) {
+  display: none !important;
 }
 
 .kanban-column {
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   display: flex;
   flex-direction: column;
-  max-height: 80vh;
+  max-height: 85vh;
   overflow: hidden;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  transition: all 0.3s ease;
+}
+
+[data-theme="dark"] .kanban-column {
+  background: rgba(30, 41, 59, 0.3);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.kanban-column:hover {
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
 .column-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px 24px;
+  background: rgba(99, 102, 241, 0.7);
   color: white;
-  border-radius: 8px 8px 0 0;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .column-header h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: 1.1rem;
+  text-transform: uppercase;
 }
 
 .card-count {
-  background: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.2);
   padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: bold;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 800;
+  backdrop-filter: blur(4px);
 }
 
 .column-content {
   flex: 1;
   overflow-y: auto;
-  padding: 10px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
 }
 
 .column-content::-webkit-scrollbar {
   width: 6px;
 }
 
-.column-content::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
 .column-content::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 10px;
-}
-
-.column-content::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-
-.empty-column {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  color: #999;
-  font-style: italic;
-  text-align: center;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-full);
 }
 
 .complaint-card {
-  background: white;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  padding: 12px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-md);
+  padding: 20px;
   cursor: grab;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: var(--shadow-sm);
+}
+
+[data-theme="dark"] .complaint-card {
+  background: rgba(30, 41, 59, 0.4);
+  border-color: rgba(255, 255, 255, 0.05);
 }
 
 .complaint-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
-  border-color: #667eea;
-}
-
-.complaint-card:active {
-  cursor: grabbing;
-  opacity: 0.8;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.category-icon {
-  font-size: 20px;
-}
-
-.priority-badge {
-  padding: 4px 8px;
-  border-radius: 4px;
-  color: white;
-  font-size: 11px;
-  font-weight: bold;
-  text-transform: uppercase;
+  transform: translateY(-5px) scale(1.02);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+  border-color: var(--accent-primary);
 }
 
 .card-title {
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 6px;
-  font-size: 14px;
-  line-height: 1.3;
-  word-break: break-word;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  font-size: 1rem;
+  line-height: 1.4;
 }
 
 .card-category {
   display: inline-block;
-  background: #f0f0f0;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 6px;
+  background: var(--bg-tertiary);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
 }
 
 .card-location {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 4px;
-  word-break: break-word;
+  font-size: 0.85rem;
+  color: var(--text-tertiary);
+  margin-top: 8px;
 }
 
 .card-time {
-  font-size: 11px;
-  color: #999;
-  margin-bottom: 4px;
-}
-
-.card-worker {
-  font-size: 12px;
-  color: #667eea;
-  font-weight: 500;
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
   margin-top: 4px;
 }
 
-.kanban-loading,
-.kanban-error {
+.card-worker {
+  font-size: 0.8rem;
+  color: var(--accent-primary);
+  font-weight: 700;
+  margin-top: 12px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  font-size: 18px;
-  color: #666;
-  background: white;
-  border-radius: 8px;
-  margin: 20px;
+  gap: 6px;
 }
 
-.kanban-error {
-  color: #dc3545;
-  background: #f8d7da;
-}
-
-/* Modal Styles */
+/* Modal Enhancements */
 .card-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(8px);
 }
 
 .modal-content {
-  background: white;
-  border-radius: 8px;
-  padding: 30px;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  position: relative;
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  padding: 40px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+  animation: fadeInScale 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .close-btn {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #666;
-  transition: color 0.3s ease;
-}
-
-.close-btn:hover {
-  color: #333;
-}
-
-.modal-content h3 {
-  margin-top: 0;
-  color: #333;
-  font-size: 22px;
-  margin-bottom: 20px;
-}
-
-.modal-details {
+  background: var(--bg-secondary);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-full);
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  right: 20px;
+  top: 20px;
 }
 
-.modal-details p {
-  margin: 0;
-  color: #666;
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-.modal-details strong {
-  color: #333;
-  font-weight: 600;
-}
-
-.modal-image {
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid #e0e0e0;
-}
-
-.modal-image strong {
-  display: block;
-  margin-bottom: 10px;
-  color: #333;
-}
-
-.modal-image img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Drag and drop visual feedback */
-.column-content.drag-over {
-  background: #f0f0f0;
-  border: 2px dashed #667eea;
-}
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .kanban-board-container {
-    padding: 10px;
+/* Animations */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
   }
 
-  .kanban-header {
-    flex-direction: column;
-    gap: 15px;
-    text-align: center;
-  }
-
-  .kanban-header h2 {
-    font-size: 22px;
-  }
-
-  .modal-content {
-    padding: 20px;
-    max-width: 90vw;
-  }
-
-  .complaint-card {
-    padding: 10px;
-  }
-
-  .card-title {
-    font-size: 13px;
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }

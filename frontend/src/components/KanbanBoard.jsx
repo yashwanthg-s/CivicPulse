@@ -215,7 +215,7 @@ export const KanbanBoard = () => {
         <Column status="assigned" title="🟡 Assigned" cards={kanbanData.assigned} />
         <Column status="in_progress" title="🟠 In Progress" cards={kanbanData.in_progress} />
         <Column status="resolved" title="🟢 Resolved" cards={kanbanData.resolved} />
-        <Column status="verified" title="✅ Verified" cards={kanbanData.verified} />
+        {/* Verified column removed per user request */}
       </div>
 
       {selectedCard && (

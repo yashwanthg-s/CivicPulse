@@ -93,9 +93,9 @@ export const Signup = ({ onSignup, onSwitchToLogin }) => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        onSignup({ 
-          role: 'citizen', 
-          username: data.user.username, 
+        onSignup({
+          role: 'citizen',
+          username: data.user.username,
           id: data.user.id,
           name: data.user.name,
           email: data.user.email
@@ -114,7 +114,7 @@ export const Signup = ({ onSignup, onSwitchToLogin }) => {
     <div className="login-container">
       <div className="login-card signup-card">
         <div className="login-header">
-          <h1>🚨 Complaint System</h1>
+          <h1>🚨 CivicPulse</h1>
           <h2>Citizen Sign Up</h2>
         </div>
 
