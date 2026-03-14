@@ -1,68 +1,86 @@
-/* Theme Variables - Professional High-Contrast Glass Theme */
+/* Minimalist Two-Tone Professional Theme (Navy & Indigo) */
 :root[data-theme="light"] {
+  /* Main Colors */
+  --color-primary: #1e293b;
+  /* Deep Slate Navy */
+  --color-accent: #6366f1;
+  /* Refined Indigo */
+
   --bg-primary: #ffffff;
-  --bg-secondary: #f1f5f9;
-  --bg-tertiary: #e2e8f0;
-  --bg-hover: rgba(79, 70, 229, 0.08);
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --bg-hover: rgba(99, 102, 241, 0.08);
 
   --text-primary: #0f172a;
-  --text-secondary: #334155;
-  /* Darker for better contrast */
-  --text-tertiary: #64748b;
-  /* Much darker than before for readability */
+  /* Nearly Black */
+  --text-secondary: #475569;
+  /* Muted Slate */
+  --text-tertiary: #94a3b8;
+  /* Light Slate */
 
-  --border-color: rgba(15, 23, 42, 0.15);
-  --border-light: rgba(15, 23, 42, 0.08);
+  --border-color: rgba(15, 23, 42, 0.1);
+  --border-light: rgba(15, 23, 42, 0.05);
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.15);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
-  --shadow-glow: 0 0 15px rgba(79, 70, 229, 0.15);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.1);
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
   --radius-full: 99px;
 
-  --accent-primary: #4f46e5;
-  --accent-secondary: #059669;
-  --accent-danger: #dc2626;
+  /* Status Colors (Subtle versions of main palette or muted colors) */
+  --accent-primary: var(--color-accent);
+  --accent-secondary: #64748b;
+  /* Muted Slate instead of bright green */
+  --accent-danger: #e11d48;
+  /* Muted Red */
   --accent-warning: #d97706;
-  --accent-info: #2563eb;
+  /* Muted Amber */
+  --accent-info: #3b82f6;
+  /* Muted Blue */
 
-  --gradient-primary: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  --gradient-primary: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  --gradient-accent: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
 }
 
 :root[data-theme="dark"] {
+  /* Main Colors */
+  --color-primary: #f8fafc;
+  /* White Slate */
+  --color-accent: #818cf8;
+  /* Soft Indigo */
+
   --bg-primary: #0f172a;
   --bg-secondary: #020617;
   --bg-tertiary: #1e293b;
-  --bg-hover: rgba(255, 255, 255, 0.08);
+  --bg-hover: rgba(129, 140, 248, 0.1);
 
   --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  /* Lighter for dark mode contrast */
-  --text-tertiary: #94a3b8;
-  /* Lighter for dark mode contrast */
+  --text-secondary: #94a3b8;
+  --text-tertiary: #475569;
 
-  --border-color: rgba(255, 255, 255, 0.2);
-  --border-light: rgba(255, 255, 255, 0.1);
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-light: rgba(255, 255, 255, 0.05);
 
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7);
-  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.25);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.2);
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
   --radius-full: 99px;
 
-  --accent-primary: #818cf8;
-  --accent-secondary: #34d399;
-  --accent-danger: #f87171;
+  --accent-primary: var(--color-accent);
+  --accent-secondary: #94a3b8;
+  --accent-danger: #fb7185;
   --accent-warning: #fbbf24;
   --accent-info: #60a5fa;
 
-  --gradient-primary: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+  --gradient-primary: linear-gradient(135deg, #f8fafc 0%, #cbd5e1 100%);
+  --gradient-accent: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
 }
