@@ -11,14 +11,16 @@ const verifyToken = (req, res, next) => {
   next();
 };
 
-// Routes
+// Routes - specific routes BEFORE generic :id routes
 router.post('/', verifyToken, upload.single('image'), ComplaintController.createComplaint);
 router.get('/', verifyToken, ComplaintController.getComplaints);
-router.get('/:id', verifyToken, ComplaintController.getComplaintById);
+router.get('/officer/:userId', verifyToken, ComplaintController.getOfficerComplaints);
+router.post('/validate-image', verifyToken, ComplaintController.validateImage);
+router.post('/extract-exif', verifyToken, upload.single('image'), ComplaintController.extractExif);
+router.put('/:id/resolve', verifyToken, upload.single('afterImage'), ComplaintController.resolveComplaint);
 router.patch('/:id/status', verifyToken, ComplaintController.updateComplaintStatus);
 router.post('/:id/feedback', verifyToken, ComplaintController.submitFeedback);
-router.post('/:id/resolve', verifyToken, ComplaintController.resolveComplaint);
+router.get('/:id', verifyToken, ComplaintController.getComplaintById);
 router.delete('/:id', verifyToken, ComplaintController.deleteComplaint);
-router.post('/validate-image', verifyToken, ComplaintController.validateImage);
 
 module.exports = router;

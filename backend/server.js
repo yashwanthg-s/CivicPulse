@@ -7,10 +7,18 @@ const complaintRoutes = require('./routes/complaints');
 const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/auth');
 const notificationRoutes = require('./routes/notifications');
+const exifRoutes = require('./routes/exifRoutes');
+const priorityQueueRoutes = require('./routes/priorityQueue');
 const slaMonitor = require('./services/slaMonitor');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+let PORT = process.env.PORT || 5000;
+
+// If port 5001 is in use, try 5003
+if (PORT === 5001 || PORT === '5001') {
+  PORT = 5003;
+  console.log('⚠️ Port 5001 may be in use, using port 5003 instead');
+}
 
 // Middleware
 app.use(cors({
@@ -29,6 +37,8 @@ app.use('/api/complaints', complaintRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', exifRoutes);
+app.use('/api/priority-queue', priorityQueueRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

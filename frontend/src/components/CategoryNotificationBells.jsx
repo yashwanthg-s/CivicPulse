@@ -19,7 +19,7 @@ export const CategoryNotificationBells = ({ userId, selectedCategory, onNotifica
     const fetchNotifications = async () => {
       try {
         const response = await fetch(
-          `http://localhost:5001/api/notifications/category?userId=${userId}&category=${selectedCategory}`,
+          `${import.meta.env.VITE_API_URL || 'http://localhost:5003/api'}/notifications/category?userId=${userId}&category=${selectedCategory}`,
           {
             headers: {
               'Content-Type': 'application/json'
@@ -44,10 +44,10 @@ export const CategoryNotificationBells = ({ userId, selectedCategory, onNotifica
     }
   }, [userId, selectedCategory]);
 
-  const handleMarkAsRead = async (notificationId) => {
+  const handleMarkAsRead = async (complaintId) => {
     try {
       const response = await fetch(
-        `http://localhost:5001/api/notifications/category/${notificationId}/read`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5003/api'}/notifications/category/${complaintId}/read?userId=${userId}`,
         {
           method: 'PUT',
           headers: {
@@ -60,7 +60,7 @@ export const CategoryNotificationBells = ({ userId, selectedCategory, onNotifica
         // Update local state
         setNotifications(prev =>
           prev.map(n =>
-            n.id === notificationId ? { ...n, read: true } : n
+            n.complaint_id === complaintId ? { ...n, read: true } : n
           )
         );
         setUnreadCount(prev => Math.max(0, prev - 1));
@@ -73,7 +73,7 @@ export const CategoryNotificationBells = ({ userId, selectedCategory, onNotifica
   const handleMarkAllAsRead = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5001/api/notifications/category/mark-all-read?userId=${userId}&category=${selectedCategory}`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5003/api'}/notifications/category/mark-all-read?userId=${userId}&category=${selectedCategory}`,
         {
           method: 'PUT',
           headers: {
@@ -139,9 +139,16 @@ export const CategoryNotificationBells = ({ userId, selectedCategory, onNotifica
                     key={notification.id}
                     className={`notification-item ${notification.read ? 'read' : 'unread'}`}
                     onClick={() => {
-                      onNotificationClick(notification.complaint_id);
-                      handleMarkAsRead(notification.id);
+                      // Navigate to complaint
+                      if (onNotificationClick) {
+                        onNotificationClick(notification.complaint_id);
+                      }
+                      // Mark as read
+                      handleMarkAsRead(notification.complaint_id);
+                      // Close dropdown
+                      setIsOpen(false);
                     }}
+                    style={{ cursor: 'pointer' }}
                   >
                     <div className="notification-content">
                       <h4>{notification.title}</h4>

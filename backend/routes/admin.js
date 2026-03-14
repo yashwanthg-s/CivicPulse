@@ -16,5 +16,7 @@ router.get('/all-complaints', verifyAdmin, AdminController.getAllComplaints);
 router.get('/emergency', verifyAdmin, AdminController.getEmergencyComplaints);
 router.get('/feedbacks', verifyAdmin, AdminController.getAllFeedbacks);
 router.get('/report', verifyAdmin, AdminController.getDailyReport);
+router.get('/heatmap', verifyAdmin, AdminController.getHeatmapData);
+router.get('/kanban', verifyAdmin, AdminController.getKanbanData);
 
 module.exports = router;

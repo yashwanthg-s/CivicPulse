@@ -6,6 +6,7 @@ export const CategoryHistory = ({ userId, selectedCategory }) => {
   const [historyComplaints, setHistoryComplaints] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedHistoryComplaint, setSelectedHistoryComplaint] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState('resolved');
 
   const categoryIcons = {
     infrastructure: '🏗️',
@@ -23,9 +24,18 @@ export const CategoryHistory = ({ userId, selectedCategory }) => {
     utilities: 'Utilities'
   };
 
+  const statusLabels = {
+    'submitted': '🔴 Open',
+    'under_review': '🟡 Assigned',
+    'in_progress': '🟠 In Progress',
+    'resolved': '🟢 Resolved',
+    'verified': '✅ Verified',
+    'rejected': '❌ Rejected'
+  };
+
   useEffect(() => {
     fetchCategoryHistory();
-  }, [selectedCategory]);
+  }, [selectedCategory, selectedStatus]);
 
   const fetchCategoryHistory = async () => {
     setLoading(true);
@@ -33,7 +43,7 @@ export const CategoryHistory = ({ userId, selectedCategory }) => {
       const filterParams = {
         role: 'officer',
         category: selectedCategory,
-        status: 'resolved'
+        status: selectedStatus
       };
 
       const data = await complaintService.getComplaints(filterParams);
@@ -63,10 +73,10 @@ export const CategoryHistory = ({ userId, selectedCategory }) => {
       <div className="category-history-container">
         <div className="history-header">
           <h2>{categoryIcons[selectedCategory]} {categoryLabels[selectedCategory]} History</h2>
-          <span className="history-count">0 Resolved</span>
+          <span className="history-count">0 {statusLabels[selectedStatus]}</span>
         </div>
         <div style={{ padding: '60px 20px', textAlign: 'center', background: 'white' }}>
-          <p className="no-history">No resolved complaints in this category yet</p>
+          <p className="no-history">No complaints with status {statusLabels[selectedStatus]} in this category yet</p>
         </div>
       </div>
     );
@@ -76,7 +86,37 @@ export const CategoryHistory = ({ userId, selectedCategory }) => {
     <div className="category-history-container">
       <div className="history-header">
         <h2>{categoryIcons[selectedCategory]} {categoryLabels[selectedCategory]} History</h2>
-        <span className="history-count">{historyComplaints.length} Resolved</span>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <span className="history-count">{historyComplaints.length} {statusLabels[selectedStatus]}</span>
+          <button 
+            onClick={fetchCategoryHistory}
+            style={{
+              padding: '6px 12px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '0.9rem'
+            }}
+            title="Refresh history"
+          >
+            🔄 Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Status Filter Buttons */}
+      <div className="status-filter-buttons">
+        {Object.entries(statusLabels).map(([status, label]) => (
+          <button
+            key={status}
+            className={`status-filter-btn ${selectedStatus === status ? 'active' : ''}`}
+            onClick={() => setSelectedStatus(status)}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       <div className="history-content">
@@ -89,7 +129,7 @@ export const CategoryHistory = ({ userId, selectedCategory }) => {
             >
               <div className="history-item-header">
                 <h4>{complaint.title}</h4>
-                <span className="status-badge resolved">✓ Resolved</span>
+                <span className={`status-badge ${complaint.status}`}>{statusLabels[complaint.status]}</span>
               </div>
               <p className="history-item-meta">
                 📅 {complaint.date} {complaint.time}
@@ -115,7 +155,7 @@ export const CategoryHistory = ({ userId, selectedCategory }) => {
             <div className="detail-section">
               <h4>📸 Original Image</h4>
               <img
-                src={`http://localhost:5001${selectedHistoryComplaint.image_path}`}
+                src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5003'}${selectedHistoryComplaint.image_path}`}
                 alt="Original complaint"
                 className="history-image"
               />
@@ -127,7 +167,7 @@ export const CategoryHistory = ({ userId, selectedCategory }) => {
                 <strong>Submitted:</strong> {selectedHistoryComplaint.date} {selectedHistoryComplaint.time}
               </p>
               <p>
-                <strong>Status:</strong> <span style={{ color: '#22863a', fontWeight: '600' }}>✓ {selectedHistoryComplaint.status}</span>
+                <strong>Status:</strong> <span style={{ color: '#22863a', fontWeight: '600' }}>{statusLabels[selectedHistoryComplaint.status]}</span>
               </p>
             </div>
 

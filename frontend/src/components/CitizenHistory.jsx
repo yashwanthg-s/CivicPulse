@@ -159,7 +159,7 @@ const CitizenHistory = ({ userId = 1, selectedComplaintId = null, onComplaintVie
             <div className="detail-section">
               <h3>📸 Evidence Photo</h3>
               <img
-                src={`http://localhost:5001${selectedComplaint.image_path}`}
+                src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5003'}${selectedComplaint.image_path}`}
                 alt="Complaint evidence"
                 className="complaint-image"
               />
@@ -177,7 +177,7 @@ const CitizenHistory = ({ userId = 1, selectedComplaintId = null, onComplaintVie
                     <div className="resolution-image-container">
                       <h4>Before</h4>
                       <img
-                        src={`http://localhost:5001${selectedComplaint.before_image_path}`}
+                        src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5003'}${selectedComplaint.before_image_path}`}
                         alt="Before resolution"
                         className="resolution-image"
                       />
@@ -187,7 +187,7 @@ const CitizenHistory = ({ userId = 1, selectedComplaintId = null, onComplaintVie
                     <div className="resolution-image-container">
                       <h4>After</h4>
                       <img
-                        src={`http://localhost:5001${selectedComplaint.after_image_path}`}
+                        src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5003'}${selectedComplaint.after_image_path}`}
                         alt="After resolution"
                         className="resolution-image"
                       />

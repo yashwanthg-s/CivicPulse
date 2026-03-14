@@ -6,8 +6,8 @@ class Complaint {
     try {
       const query = `
         INSERT INTO complaints 
-        (user_id, title, description, image_path, latitude, longitude, date, time, category, priority, status, accuracy, device_info, ip_address)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (user_id, title, description, image_path, latitude, longitude, date, time, category, priority, status, accuracy, device_info, ip_address, exif_latitude, exif_longitude, capture_timestamp, location_source, location_validation_status, location_discrepancy_flag, confidence_score, department)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
 
       const [result] = await connection.execute(query, [
@@ -24,7 +24,15 @@ class Complaint {
         'submitted',
         complaintData.accuracy || null,
         complaintData.device_info || null,
-        complaintData.ip_address || null
+        complaintData.ip_address || null,
+        complaintData.exif_latitude || null,
+        complaintData.exif_longitude || null,
+        complaintData.capture_timestamp || null,
+        complaintData.location_source || 'SYSTEM_DEFAULT',
+        complaintData.location_validation_status || null,
+        complaintData.location_discrepancy_flag || false,
+        complaintData.confidence_score || 85,
+        complaintData.department || complaintData.category || 'other'
       ]);
 
       return result.insertId;
@@ -455,6 +463,61 @@ class Complaint {
       `;
       const [rows] = await connection.execute(query, [complaintId]);
       return rows[0] || null;
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async storeExifMetadata(complaintId, exifData) {
+    const connection = await pool.getConnection();
+    try {
+      const query = `
+        INSERT INTO exif_metadata_archive 
+        (complaint_id, raw_exif_json, gps_latitude, gps_longitude, gps_altitude, gps_dop, camera_make, camera_model, iso_speed, focal_length, f_number, exposure_time, datetime_original)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      const camera = exifData.camera || {};
+      const gps = exifData.gps || {};
+
+      const [result] = await connection.execute(query, [
+        complaintId,
+        JSON.stringify(exifData.raw || {}),
+        gps.latitude || null,
+        gps.longitude || null,
+        null,
+        gps.dop || null,
+        camera.make || null,
+        camera.model || null,
+        camera.isoSpeed || null,
+        camera.focalLength || null,
+        camera.fNumber || null,
+        camera.exposureTime || null,
+        exifData.timestamp?.timestamp || null
+      ]);
+
+      return result.insertId;
+    } finally {
+      connection.release();
+    }
+  }
+
+  static async updateLocationValidation(complaintId, validationData) {
+    const connection = await pool.getConnection();
+    try {
+      const query = `
+        UPDATE complaints 
+        SET location_validation_status = ?, location_discrepancy_flag = ?
+        WHERE id = ?
+      `;
+
+      await connection.execute(query, [
+        validationData.validationStatus,
+        validationData.discrepancyFlag ? 1 : 0,
+        complaintId
+      ]);
+
+      return { success: true };
     } finally {
       connection.release();
     }

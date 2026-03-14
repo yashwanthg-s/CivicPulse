@@ -8,6 +8,8 @@ import { Signup } from './components/Signup';
 import { CategoryNotificationBells } from './components/CategoryNotificationBells';
 import { CitizenNotificationBell } from './components/CitizenNotificationBell';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
+import './styles/theme.css';
 import './App.css';
 
 function AppContent() {
@@ -102,6 +104,7 @@ function AppContent() {
 
 function AppMain({ user, currentPage, setCurrentPage, handleLogout, handleNotificationClick, selectedComplaintId, setSelectedComplaintId }) {
   const { t } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className="app">
@@ -122,6 +125,29 @@ function AppMain({ user, currentPage, setCurrentPage, handleLogout, handleNotifi
                 />
               </>
             )}
+            <div className="theme-toggle">
+              <button 
+                className={theme === 'light' ? 'active' : ''} 
+                onClick={() => toggleTheme('light')}
+                title="Light theme"
+              >
+                ☀️
+              </button>
+              <button 
+                className={theme === 'dark' ? 'active' : ''} 
+                onClick={() => toggleTheme('dark')}
+                title="Dark theme"
+              >
+                🌙
+              </button>
+              <button 
+                className={theme === 'system' ? 'active' : ''} 
+                onClick={() => toggleTheme('system')}
+                title="System theme"
+              >
+                💻
+              </button>
+            </div>
             <div className="user-info">
               <span className="user-name">👤 {user.name || user.username}</span>
               <span className="user-role">{user.role}</span>
@@ -193,8 +219,10 @@ function AppMain({ user, currentPage, setCurrentPage, handleLogout, handleNotifi
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <AppContent />
-    </LanguageProvider>
+    <ThemeProvider>
+      <LanguageProvider>
+        <AppContent />
+      </LanguageProvider>
+    </ThemeProvider>
   );
 }

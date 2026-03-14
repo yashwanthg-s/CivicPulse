@@ -1,4 +1,5 @@
 const axios = require('axios');
+const languageTranslator = require('../utils/languageTranslator');
 
 class GeminiVisionService {
   constructor() {

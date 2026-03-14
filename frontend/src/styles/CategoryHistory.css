@@ -36,6 +36,40 @@
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
+.status-filter-buttons {
+  display: flex;
+  gap: 10px;
+  padding: 20px 40px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  flex-wrap: wrap;
+}
+
+.status-filter-btn {
+  padding: 8px 16px;
+  border: 2px solid #e9ecef;
+  background: white;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  color: #4a5568;
+}
+
+.status-filter-btn:hover {
+  border-color: #667eea;
+  color: #667eea;
+  background: #f0f4ff;
+}
+
+.status-filter-btn.active {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
 .loading-text {
   text-align: center;
   color: #666;

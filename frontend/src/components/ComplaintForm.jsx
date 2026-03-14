@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { CameraCapture } from './CameraCapture';
 import { LocationDisplay } from './LocationDisplay';
+import { ExifLocationDisplay } from './ExifLocationDisplay';
+import { ManualLocationSelector } from './ManualLocationSelector';
+import { SpeechInput } from './SpeechInput';
 import { complaintService } from '../services/complaintService';
 import { useLanguage } from '../context/LanguageContext';
+import { contentFilter } from '../utils/contentFilter';
 import '../styles/ComplaintForm.css';
 
 export const ComplaintForm = ({ userId = 1 }) => {
@@ -16,6 +20,9 @@ export const ComplaintForm = ({ userId = 1 }) => {
 
   const [capturedPhoto, setCapturedPhoto] = useState(null);
   const [location, setLocation] = useState(null);
+  const [exifData, setExifData] = useState(null);
+  const [manualLocation, setManualLocation] = useState(null);
+  const [showManualLocationSelector, setShowManualLocationSelector] = useState(false);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(false);
@@ -23,6 +30,7 @@ export const ComplaintForm = ({ userId = 1 }) => {
   const [duplicateInfo, setDuplicateInfo] = useState(null);
   const [imageValidationError, setImageValidationError] = useState('');
   const [validationResult, setValidationResult] = useState(null);
+  const [chatBlockedError, setChatBlockedError] = useState('');
 
   const getCurrentDateTime = () => {
     const now = new Date();
@@ -30,6 +38,12 @@ export const ComplaintForm = ({ userId = 1 }) => {
       date: now.toISOString().split('T')[0],
       time: now.toTimeString().split(' ')[0]
     };
+  };
+
+  // Check if content is a chat message
+  const checkForChatMessage = (title, description) => {
+    const result = contentFilter.checkContent(title, description);
+    return result;
   };
 
   const handleInputChange = (e) => {
@@ -43,6 +57,20 @@ export const ComplaintForm = ({ userId = 1 }) => {
         ...prev,
         [name]: ''
       }));
+    }
+
+    // Real-time chat detection
+    if (name === 'title' || name === 'description') {
+      const newFormData = {
+        ...formData,
+        [name]: value
+      };
+      const contentCheck = checkForChatMessage(newFormData.title, newFormData.description);
+      if (contentCheck.isBlocked) {
+        setChatBlockedError(contentCheck.reason);
+      } else {
+        setChatBlockedError('');
+      }
     }
   };
 
@@ -68,7 +96,7 @@ export const ComplaintForm = ({ userId = 1 }) => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-        const response = await fetch('http://localhost:5001/api/complaints/validate-image', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5003/api'}/complaints/validate-image`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -133,6 +161,39 @@ export const ComplaintForm = ({ userId = 1 }) => {
     setCapturedPhoto(photoData);
     setImageValidationError('');
     
+    // Extract EXIF data from photo
+    try {
+      const formData = new FormData();
+      formData.append('image', photoData.blob, 'photo.jpg');
+      
+      const exifResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5003/api'}/complaints/extract-exif`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (exifResponse.ok) {
+        const exifResult = await exifResponse.json();
+        if (exifResult.success && exifResult.gps) {
+          setExifData(exifResult);
+          setLocation({
+            latitude: exifResult.gps.latitude,
+            longitude: exifResult.gps.longitude,
+            accuracy: exifResult.confidenceScore || 85
+          });
+          console.log('✓ EXIF GPS extracted:', exifResult.gps);
+        } else {
+          console.log('No GPS data in image, showing manual location selector');
+          setShowManualLocationSelector(true);
+        }
+      } else {
+        console.warn('EXIF extraction failed with status:', exifResponse.status);
+        setShowManualLocationSelector(true);
+      }
+    } catch (error) {
+      console.warn('EXIF extraction error:', error.message);
+      setShowManualLocationSelector(true);
+    }
+    
     // Validate image with Gemini and auto-fill category/priority
     setValidating(true);
     try {
@@ -141,7 +202,7 @@ export const ComplaintForm = ({ userId = 1 }) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
 
-      const response = await fetch('http://localhost:5001/api/complaints/validate-image', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5003/api'}/complaints/validate-image`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -189,6 +250,12 @@ export const ComplaintForm = ({ userId = 1 }) => {
 
   const handleLocationCapture = (locationData) => {
     setLocation(locationData);
+  };
+
+  const handleManualLocationSelected = (locationData) => {
+    setManualLocation(locationData);
+    setLocation(locationData);
+    setShowManualLocationSelector(false);
   };
 
   const handleError = (errorMessage) => {
@@ -242,7 +309,9 @@ export const ComplaintForm = ({ userId = 1 }) => {
         date,
         time,
         imageBlob: capturedPhoto.blob,
-        detected_issue: validationResult?.detected_issue || null
+        detected_issue: validationResult?.detected_issue || null,
+        exifData: exifData,
+        manualLocation: manualLocation
       };
 
       console.log('Submitting complaint for user ID:', userId);
@@ -308,6 +377,13 @@ export const ComplaintForm = ({ userId = 1 }) => {
         </div>
       )}
 
+      {chatBlockedError && (
+        <div className="alert alert-error">
+          <strong>❌ Cannot be submitted:</strong>
+          <p>{chatBlockedError}</p>
+        </div>
+      )}
+
       {validating && (
         <div className="alert alert-info">
           ⏳ {t('loading')}
@@ -348,14 +424,12 @@ export const ComplaintForm = ({ userId = 1 }) => {
         {/* Complaint Title */}
         <div className="form-group">
           <label htmlFor="title">{t('complaintTitle')} *</label>
-          <input
-            type="text"
-            id="title"
-            name="title"
+          <SpeechInput
             value={formData.title}
             onChange={handleInputChange}
             placeholder={t('complaintTitle')}
-            className={errors.title ? 'input-error' : ''}
+            isTextarea={false}
+            fieldName="title"
           />
           {errors.title && <span className="error-text">{errors.title}</span>}
         </div>
@@ -363,14 +437,12 @@ export const ComplaintForm = ({ userId = 1 }) => {
         {/* Complaint Description */}
         <div className="form-group">
           <label htmlFor="description">{t('description')} *</label>
-          <textarea
-            id="description"
-            name="description"
+          <SpeechInput
             value={formData.description}
             onChange={handleInputChange}
             placeholder={t('description')}
-            rows="5"
-            className={errors.description ? 'input-error' : ''}
+            isTextarea={true}
+            fieldName="description"
           />
           {errors.description && <span className="error-text">{errors.description}</span>}
         </div>
@@ -378,22 +450,22 @@ export const ComplaintForm = ({ userId = 1 }) => {
         {/* Auto-Detected Category & Priority Display */}
         {validationResult && (
           <div className="form-group auto-detected-info">
-            <h4>🔍 Auto-Detected Information</h4>
+            <h4>🔍 {t('autoDetectedInformation')}</h4>
             <div className="detection-grid">
               <div className="detection-item">
-                <label>{t('category')}</label>
+                <label>{t('categoryLabel')}</label>
                 <p className="detection-value">{t(validationResult.category)}</p>
               </div>
               <div className="detection-item">
-                <label>{t('priority')}</label>
+                <label>{t('priorityLabel')}</label>
                 <p className="detection-value">{t(validationResult.priority)}</p>
               </div>
               <div className="detection-item">
-                <label>Confidence</label>
+                <label>{t('confidenceLabel')}</label>
                 <p className="detection-value">{validationResult.confidence}%</p>
               </div>
             </div>
-            <p className="detection-issue"><strong>Detected Issue:</strong> {validationResult.detected_issue}</p>
+            <p className="detection-issue"><strong>{t('detectedIssue')}:</strong> {validationResult.detected_issue}</p>
           </div>
         )}
 
@@ -409,10 +481,41 @@ export const ComplaintForm = ({ userId = 1 }) => {
         {/* Location Capture */}
         <div className="form-section">
           {errors.location && <span className="error-text">{errors.location}</span>}
-          <LocationDisplay
-            onLocationCapture={handleLocationCapture}
-            onError={handleError}
-          />
+          
+          {exifData && exifData.gps ? (
+            <>
+              <ExifLocationDisplay
+                exifCoordinates={exifData.gps}
+                manualCoordinates={manualLocation}
+                confidenceScore={exifData.gps.dop ? 100 - exifData.gps.dop : 85}
+                onManualLocationChange={handleManualLocationSelected}
+              />
+              {!manualLocation && (
+                <button
+                  type="button"
+                  onClick={() => setShowManualLocationSelector(true)}
+                  className="btn btn-secondary"
+                  style={{ marginTop: '10px' }}
+                >
+                  📍 Adjust Location Manually
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              {showManualLocationSelector ? (
+                <ManualLocationSelector
+                  onLocationSelected={handleManualLocationSelected}
+                  initialLocation={location}
+                />
+              ) : (
+                <LocationDisplay
+                  onLocationCapture={handleLocationCapture}
+                  onError={handleError}
+                />
+              )}
+            </>
+          )}
         </div>
 
         {/* Date and Time Display */}
@@ -432,7 +535,7 @@ export const ComplaintForm = ({ userId = 1 }) => {
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={loading || validating}
+          disabled={loading || validating || !!chatBlockedError}
           className="btn btn-primary btn-large btn-submit"
         >
           {loading ? '⏳ ' + t('submitting') : validating ? '⏳ ' + t('loading') : '✓ ' + t('submitButton')}

@@ -1,4 +1,5 @@
 const axios = require('axios');
+const languageTranslator = require('../utils/languageTranslator');
 
 class OpenAIVisionService {
   constructor() {
@@ -25,8 +26,18 @@ class OpenAIVisionService {
       }
 
       console.log('Analyzing complaint image with OpenAI Vision API...');
-      console.log('Title:', title);
-      console.log('Description:', description);
+      console.log('Original Title:', title);
+      console.log('Original Description:', description);
+      
+      // Translate title and description from Kannada/Hindi to English
+      const translated = languageTranslator.translateComplaint(title, description);
+      const translatedTitle = translated.title;
+      const translatedDescription = translated.description;
+      
+      if (translatedTitle !== title || translatedDescription !== description) {
+        console.log('🔤 Translated Title:', translatedTitle);
+        console.log('🔤 Translated Description:', translatedDescription);
+      }
       
       const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
       
@@ -37,7 +48,7 @@ class OpenAIVisionService {
       console.log('Base64 image size:', base64Data.length, 'bytes');
       console.log('Using model: gpt-4o');
       
-      // Call OpenAI Vision API
+      // Call OpenAI Vision API with translated text
       const response = await axios.post(
         this.apiUrl,
         {
@@ -51,8 +62,8 @@ class OpenAIVisionService {
                   text: `You are a civic complaint classifier. Analyze the image and text, then respond ONLY with valid JSON.
 
 COMPLAINT DETAILS:
-Title: "${title}"
-Description: "${description}"
+Title: "${translatedTitle}"
+Description: "${translatedDescription}"
 
 ANALYSIS STEPS:
 1. Examine the image carefully for human faces

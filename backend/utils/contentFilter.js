@@ -22,16 +22,48 @@ class ContentFilter {
       // Personal Attacks
       'revenge', 'retaliate', 'get back at', 'teach a lesson',
       
-      // Spam/Fake
-      'test', 'testing', 'fake complaint', 'dummy', 'sample'
+      // Spam/Fake (removed 'test', 'testing', 'sample' as they're too common in legitimate complaints)
+      'fake complaint', 'dummy'
     ];
     
     // Chat/greeting words that indicate non-complaint content
     this.chatKeywords = [
-      'hi', 'hello', 'hey', 'hii', 'hiii',
-      'good morning', 'good afternoon', 'good evening',
-      'hi there', 'hello there', 'greetings',
-      'whatsapp', 'instagram', 'facebook', 'snapchat', 'tiktok'
+      // English greetings
+      'hi', 'hello', 'hey', 'hii', 'hiii', 'hiiii',
+      'good morning', 'good afternoon', 'good evening', 'good night',
+      'hi there', 'hello there', 'greetings', 'hey there',
+      'what\'s up', 'whats up', 'sup', 'yo',
+      'how are you', 'how r u', 'how ru', 'how are u',
+      'what are you doing', 'what r u doing', 'what ru doing',
+      'where are you', 'where r u', 'where ru',
+      'who are you', 'who r u', 'who ru',
+      'what is this', 'what is that',
+      'are you there', 'r u there', 'anyone there',
+      'talk to me', 'chat with me', 'message me',
+      'call me', 'text me', 'dm me',
+      'thanks', 'thank you', 'thx', 'ty',
+      'bye', 'goodbye', 'see you', 'see ya',
+      'ok', 'okay', 'alright', 'sure', 'yes', 'no',
+      'lol', 'haha', 'hehe', 'rofl',
+      'whatsapp', 'instagram', 'facebook', 'snapchat', 'tiktok', 'telegram',
+      
+      // Kannada greetings
+      'ನಮಸ್ಕಾರ', 'ಹಾಯ್', 'ಹಲೋ', 'ಹೆಲೋ',
+      'ಸುಪ್ರಭಾತ', 'ಸುಸಂಜೆ', 'ಸುರಾತ್ರಿ',
+      'ನೀವು ಯಾಕೆ ಮಾಡುತ್ತಿದ್ದೀರಿ', 'ನೀವು ಎಲ್ಲಿದ್ದೀರಿ',
+      'ನೀವು ಯಾರು', 'ಇದು ಏನು', 'ಅದು ಏನು',
+      'ಧನ್ಯವಾದ', 'ಧನ್ಯವಾದಗಳು', 'ಸರಿ', 'ಸರಿಯಾಗಿದೆ',
+      'ಹೌದು', 'ಇಲ್ಲ', 'ಸರಿ', 'ಠೀಕ್',
+      'ಬೈ', 'ಗುಡ್ಬೈ', 'ಸೀ ಯೂ',
+      
+      // Hindi greetings
+      'नमस्ते', 'हाय', 'हेलो', 'हेलो',
+      'सुप्रभात', 'शुभ संध्या', 'शुभ रात्रि',
+      'आप क्या कर रहे हैं', 'आप कहाँ हैं',
+      'आप कौन हैं', 'यह क्या है', 'वह क्या है',
+      'धन्यवाद', 'धन्यवाद', 'ठीक है', 'ठीक है',
+      'हाँ', 'नहीं', 'ठीक है', 'ठीक है',
+      'बाय', 'अलविदा', 'देखते हैं'
     ];
     
     // Suspicious patterns
@@ -43,10 +75,18 @@ class ContentFilter {
     ];
     
     // Question patterns that indicate chat attempts
-    // REMOVED: Most patterns to allow casual language in complaints
     this.chatPatterns = [
       /\b(are you there|r u there|anyone there)\b/i,
-      /\b(who are you|what are you|who is this)\b/i,
+      /\b(who are you|what are you|who is this|what is this)\b/i,
+      /\b(how are you|how r u|how ru|how are u)\b/i,
+      /\b(what are you doing|what r u doing|what ru doing)\b/i,
+      /\b(where are you|where r u|where ru)\b/i,
+      /\b(talk to me|chat with me|message me|call me|text me)\b/i,
+      /\b(what\'s up|whats up|sup|yo)\b/i,
+      /\b(thanks|thank you|thx|ty)\b/i,
+      /\b(bye|goodbye|see you|see ya)\b/i,
+      /\b(ok|okay|alright|sure)\b/i,
+      /\b(lol|haha|hehe|rofl)\b/i,
     ];
   }
   
@@ -89,14 +129,37 @@ class ContentFilter {
       }
     }
     
-    // Only block chat if it's ONLY chat (no civic content)
-    // Check if it's a pure chat message (just greetings, no real content)
-    const hasChatKeywords = this.chatKeywords.some(kw => fullText.includes(kw.toLowerCase()));
+    // Check for chat patterns first (more aggressive)
     const hasChatPattern = this.chatPatterns.some(pattern => pattern.test(fullText));
     
-    // If it's ONLY chat (no other meaningful content), block it
-    if ((hasChatKeywords || hasChatPattern) && fullText.length < 50) {
-      // Very short and only chat keywords = likely spam
+    // Check for chat keywords
+    const chatKeywordCount = this.chatKeywords.filter(kw => 
+      fullText.includes(kw.toLowerCase())
+    ).length;
+    
+    // Block if:
+    // 1. Contains chat patterns (like "what are you doing", "how are you")
+    // 2. Contains 3+ chat keywords (was 2, now more lenient)
+    // 3. Is very short and contains 2+ chat keywords
+    
+    if (hasChatPattern) {
+      // Chat pattern detected - this is likely a chat message
+      return {
+        isBlocked: true,
+        reason: `This appears to be a chat message, not a complaint. Please submit only legitimate civic issues like infrastructure problems, sanitation issues, or public service concerns.`
+      };
+    }
+    
+    if (chatKeywordCount >= 3) {
+      // Multiple chat keywords detected (3 or more)
+      return {
+        isBlocked: true,
+        reason: `This appears to be a chat message, not a complaint. Please submit only legitimate civic issues like infrastructure problems, sanitation issues, or public service concerns.`
+      };
+    }
+    
+    if (chatKeywordCount >= 2 && fullText.length < 30) {
+      // Two chat keywords and very short (< 30 chars) = likely spam
       return {
         isBlocked: true,
         reason: `This appears to be a chat message, not a complaint. Please submit only legitimate civic issues like infrastructure problems, sanitation issues, or public service concerns.`

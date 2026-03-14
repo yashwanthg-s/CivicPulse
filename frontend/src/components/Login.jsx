@@ -45,7 +45,7 @@ export const Login = ({ onLogin, onSwitchToSignup }) => {
         }
       } else {
         // For citizens, check against database
-        const response = await fetch('http://localhost:5001/api/auth/login', {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5003/api'}/auth/login`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -78,7 +78,8 @@ export const Login = ({ onLogin, onSwitchToSignup }) => {
     setShowLanguageModal(false);
     
     // Get the login data from form
-    const response = fetch('http://localhost:5001/api/auth/login', {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
+    const response = fetch(`${apiUrl}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

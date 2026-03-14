@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { complaintService } from '../services/complaintService';
 import { locationService } from '../services/locationService';
+import { ComplaintHeatMap } from './ComplaintHeatMap';
+import { LeafletHeatMap } from './LeafletHeatMap';
+import { KanbanBoard } from './KanbanBoard';
 import '../styles/AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -193,6 +196,18 @@ const AdminDashboard = () => {
           📋 All Complaints ({allComplaints.length})
         </button>
         <button
+          className={`tab-btn ${activeTab === 'kanban' ? 'active' : ''}`}
+          onClick={() => setActiveTab('kanban')}
+        >
+          📊 Kanban Board
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'heatmap' ? 'active' : ''}`}
+          onClick={() => setActiveTab('heatmap')}
+        >
+          🔥 Heat Map
+        </button>
+        <button
           className={`tab-btn ${activeTab === 'feedback' ? 'active' : ''}`}
           onClick={() => setActiveTab('feedback')}
         >
@@ -249,7 +264,7 @@ const AdminDashboard = () => {
                     </div>
 
                     <img
-                      src={`http://localhost:5001${complaint.image_path}`}
+                      src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5003'}${complaint.image_path}`}
                       alt="Complaint"
                       className="emergency-image"
                     />
@@ -304,6 +319,14 @@ const AdminDashboard = () => {
                 ))}
               </div>
             )}
+          </div>
+        ) : activeTab === 'kanban' ? (
+          <div className="kanban-section">
+            <KanbanBoard />
+          </div>
+        ) : activeTab === 'heatmap' ? (
+          <div className="heatmap-section">
+            <LeafletHeatMap />
           </div>
         ) : (
           <div className="feedback-section">
@@ -372,7 +395,7 @@ const AdminDashboard = () => {
               <div className="detail-section">
                 <h3>📸 Original Complaint Image</h3>
                 <img
-                  src={`http://localhost:5001${selectedComplaint.image_path}`}
+                  src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5003'}${selectedComplaint.image_path}`}
                   alt="Complaint"
                   className="detail-image"
                 />
@@ -423,7 +446,7 @@ const AdminDashboard = () => {
                       <div className="resolution-image-container">
                         <h4>Before Work</h4>
                         <img
-                          src={`http://localhost:5001${selectedComplaint.before_image_path}`}
+                          src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5003'}${selectedComplaint.before_image_path}`}
                           alt="Before resolution"
                           className="resolution-image"
                         />
@@ -433,7 +456,7 @@ const AdminDashboard = () => {
                       <div className="resolution-image-container">
                         <h4>After Work</h4>
                         <img
-                          src={`http://localhost:5001${selectedComplaint.after_image_path}`}
+                          src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5003'}${selectedComplaint.after_image_path}`}
                           alt="After resolution"
                           className="resolution-image"
                         />

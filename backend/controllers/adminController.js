@@ -275,6 +275,194 @@ class AdminController {
       });
     }
   }
+
+  static async getHeatmapData(req, res) {
+    try {
+      const { category, days = 30 } = req.query;
+
+      // Get complaints with valid coordinates
+      let complaints = await Complaint.getAllForAdmin();
+
+      // Filter by valid coordinates
+      complaints = complaints.filter(c => {
+        const lat = parseFloat(c.latitude);
+        const lng = parseFloat(c.longitude);
+        return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0;
+      });
+
+      // Filter by category if provided
+      if (category && category !== 'all') {
+        complaints = complaints.filter(c => c.category === category);
+      }
+
+      // Filter by date range if provided
+      if (days) {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - parseInt(days));
+        complaints = complaints.filter(c => new Date(c.created_at) >= cutoffDate);
+      }
+
+      // Cluster complaints by geographic proximity (200 meters)
+      const clusterRadius = 0.2; // km
+      const clusters = [];
+      const visited = new Set();
+
+      complaints.forEach((complaint, index) => {
+        if (visited.has(index)) return;
+
+        const cluster = [complaint];
+        visited.add(index);
+
+        complaints.forEach((otherComplaint, otherIndex) => {
+          if (visited.has(otherIndex)) return;
+
+          const distance = calculateDistance(
+            complaint.latitude,
+            complaint.longitude,
+            otherComplaint.latitude,
+            otherComplaint.longitude
+          );
+
+          if (distance <= clusterRadius) {
+            cluster.push(otherComplaint);
+            visited.add(otherIndex);
+          }
+        });
+
+        // Calculate cluster center and intensity
+        const avgLat = cluster.reduce((sum, c) => sum + parseFloat(c.latitude), 0) / cluster.length;
+        const avgLng = cluster.reduce((sum, c) => sum + parseFloat(c.longitude), 0) / cluster.length;
+
+        clusters.push({
+          latitude: parseFloat(avgLat.toFixed(6)),
+          longitude: parseFloat(avgLng.toFixed(6)),
+          count: cluster.length,
+          complaints: cluster.map(c => ({
+            id: c.id,
+            title: c.title,
+            category: c.category,
+            priority: c.priority,
+            status: c.status
+          }))
+        });
+      });
+
+      // Calculate metrics
+      const totalComplaints = complaints.length;
+      const hotspotAreas = clusters.filter(c => c.count >= 3).length;
+      const maxCount = Math.max(...clusters.map(c => c.count), 1);
+
+      // Calculate coverage area
+      if (complaints.length > 0) {
+        const lats = complaints.map(c => parseFloat(c.latitude));
+        const lngs = complaints.map(c => parseFloat(c.longitude));
+        const latRange = Math.max(...lats) - Math.min(...lats);
+        const lngRange = Math.max(...lngs) - Math.min(...lngs);
+        var coverageArea = `${latRange.toFixed(2)}° × ${lngRange.toFixed(2)}°`;
+      }
+
+      res.json({
+        success: true,
+        data: {
+          clusters: clusters.sort((a, b) => b.count - a.count),
+          metrics: {
+            totalComplaints,
+            hotspotAreas,
+            maxDensity: maxCount,
+            coverageArea: coverageArea || 'N/A'
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Get heatmap data error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch heatmap data',
+        error: error.message
+      });
+    }
+  }
+  static async getKanbanData(req, res) {
+    try {
+      // Fetch all complaints
+      const complaints = await Complaint.getAllForAdmin();
+
+      // Map database status to Kanban status
+      const statusMap = {
+        'submitted': 'open',
+        'under_review': 'assigned',
+        'in_progress': 'in_progress',
+        'resolved': 'resolved',
+        'verified': 'verified',
+        'rejected': 'reopened'
+      };
+
+      // Organize complaints by Kanban status
+      const kanbanData = {
+        open: [],
+        assigned: [],
+        in_progress: [],
+        resolved: [],
+        verified: []
+      };
+
+      complaints.forEach(complaint => {
+        const kanbanStatus = statusMap[complaint.status] || 'open';
+
+        // Only add to valid Kanban statuses
+        if (kanbanData.hasOwnProperty(kanbanStatus)) {
+          kanbanData[kanbanStatus].push({
+            id: complaint.id,
+            title: complaint.title,
+            description: complaint.description,
+            category: complaint.category,
+            priority: complaint.priority,
+            latitude: complaint.latitude,
+            longitude: complaint.longitude,
+            status: complaint.status,
+            assigned_worker_id: complaint.assigned_worker_id,
+            created_at: complaint.created_at,
+            updated_at: complaint.updated_at,
+            image_path: complaint.image_path,
+            before_image_path: complaint.before_image_path,
+            after_image_path: complaint.after_image_path
+          });
+        }
+      });
+
+      // Sort each column by created_at (newest first)
+      Object.keys(kanbanData).forEach(status => {
+        kanbanData[status].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      });
+
+      res.json({
+        success: true,
+        data: kanbanData
+      });
+    } catch (error) {
+      console.error('Get kanban data error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch kanban data',
+        error: error.message
+      });
+    }
+  }
+
+
 }
+
+// Helper function to calculate distance between two coordinates
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in km
+}
+
 
 module.exports = AdminController;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import '../styles/NotificationBell.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5003/api';
 
 export const OfficerNotificationBell = ({ officerId, selectedCategory, onNotificationClick }) => {
   const [notifications, setNotifications] = useState([]);

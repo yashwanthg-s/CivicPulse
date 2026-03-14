@@ -14,12 +14,15 @@ export const CitizenNotificationBell = ({ userId, onNotificationClick }) => {
     try {
       setLoading(true);
       const response = await notificationService.getResolutionNotifications(userId);
-      if (response.success) {
-        setNotifications(response.notifications);
-        setUnreadCount(response.unread_count);
+      if (response && response.success) {
+        setNotifications(response.notifications || []);
+        setUnreadCount(response.unread_count || 0);
       }
     } catch (error) {
       console.error('Failed to fetch resolution notifications:', error);
+      // Silently fail - don't break the UI
+      setNotifications([]);
+      setUnreadCount(0);
     } finally {
       setLoading(false);
     }
@@ -27,12 +30,18 @@ export const CitizenNotificationBell = ({ userId, onNotificationClick }) => {
 
   // Initial fetch and polling
   useEffect(() => {
-    fetchNotifications();
+    // Add a small delay to ensure backend is ready
+    const timer = setTimeout(() => {
+      fetchNotifications();
+    }, 500);
     
     // Poll for new notifications every 30 seconds
     const interval = setInterval(fetchNotifications, 30000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, [userId]);
 
   // Close dropdown when clicking outside
